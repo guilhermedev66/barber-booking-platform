@@ -12,8 +12,27 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+const string FrontendCorsPolicy = "Frontend";
 
 builder.Services.AddControllers();
+
+var allowedFrontendOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        if (allowedFrontendOrigins.Length > 0)
+        {
+            policy
+                .WithOrigins(allowedFrontendOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -119,12 +138,20 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+
     try
     {
+        if (applyMigrationsOnStartup)
+        {
+            await dbContext.Database.MigrateAsync();
+        }
+
         await IdentitySeeder.SeedRolesAsync(roleManager);
     }
-    catch (Exception ex)
+    catch (Exception ex) when (!applyMigrationsOnStartup)
     {
         app.Logger.LogWarning(ex, "Skipping role seeding: database not reachable.");
     }
@@ -132,6 +159,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
+app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 

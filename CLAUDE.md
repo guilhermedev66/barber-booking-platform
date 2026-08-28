@@ -55,6 +55,11 @@ Api. Adicionar camada extra só se a complexidade real pedir.
 ## Comandos
 
 ```
+# stack local completo (PostgreSQL + API)
+docker compose up --build
+# API: http://localhost:8080 | Swagger: http://localhost:8080/swagger
+# para encerrar: docker compose down
+
 # backend
 cd backend
 dotnet build
@@ -67,6 +72,14 @@ npm install
 npm run dev
 npm test
 ```
+
+O Compose aguarda o PostgreSQL ficar saudável, aplica as migrations e cria as
+roles do Identity antes de disponibilizar a API. Os dados ficam persistidos no
+volume `barberbooking_postgres`. A chave JWT e a senha do banco no Compose são
+exclusivamente locais e não devem ser reutilizadas em produção.
+
+Em desenvolvimento, a API aceita CORS somente dos origins locais do Vite nas
+portas `5173` (dev) e `4173` (preview), para `localhost` e `127.0.0.1`.
 
 Os testes de integração do backend usam Testcontainers e exigem Docker ativo.
 
