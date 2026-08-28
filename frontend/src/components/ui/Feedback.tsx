@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { type ReactNode, useEffect, useState } from "react"
 
 export function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -15,10 +15,24 @@ export function Spinner({ className = "" }: { className?: string }) {
 }
 
 export function LoadingState({ label = "Carregando…" }: { label?: string }) {
+  const [isSlow, setIsSlow] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsSlow(true), 6000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
-    <div role="status" className="flex items-center justify-center gap-3 py-12 text-ink-500">
-      <Spinner />
-      <span className="text-sm">{label}</span>
+    <div role="status" className="flex flex-col items-center justify-center gap-3 py-12 text-center text-ink-500">
+      <div className="flex items-center gap-3">
+        <Spinner />
+        <span className="text-sm">{label}</span>
+      </div>
+      {isSlow && (
+        <p className="max-w-xs text-xs text-ink-500">
+          Isso está demorando mais que o normal — o servidor pode estar iniciando após um período sem uso.
+        </p>
+      )}
     </div>
   )
 }

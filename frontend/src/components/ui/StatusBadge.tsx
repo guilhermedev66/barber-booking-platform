@@ -8,7 +8,7 @@ const labels: Record<AppointmentStatus, string> = {
 }
 
 const classes: Record<AppointmentStatus, string> = {
-  Pending: "bg-brass-200 text-brass-700",
+  Pending: "bg-brass-200 text-ink-900",
   Confirmed: "bg-ink-800 text-brass-300",
   Cancelled: "bg-error-100 text-error-600",
   Completed: "bg-ink-100 text-ink-600",

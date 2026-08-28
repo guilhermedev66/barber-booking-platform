@@ -257,7 +257,7 @@ export function BookPage() {
                     selectedService?.id === service.id ? "bg-brass-200/30" : "hover:bg-ink-100",
                   ].join(" ")}
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-heading text-lg font-semibold text-ink-900">{service.name}</p>
                     <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-ink-500 tabular-nums">
                       {formatDuration(service.durationMinutes)}

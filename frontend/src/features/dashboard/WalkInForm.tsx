@@ -148,7 +148,7 @@ export function WalkInForm({
               {groupSlotsByPeriod(availability.slots, availability.timeZoneId).map((group) => (
                 <div key={group.label}>
                   <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{group.label}</p>
-                  <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                  <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                     {group.slots.map(({ slot, time }) => (
                       <button
                         key={slot.startUtc}

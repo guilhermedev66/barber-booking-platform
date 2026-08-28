@@ -107,14 +107,14 @@ function AppointmentRow({
 
   return (
     <li className="rounded-lg border border-ink-200 bg-white/60 px-4 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex w-14 flex-col items-center justify-center rounded-md bg-ink-950 py-1.5 text-brass-300">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-md bg-ink-950 py-1.5 text-brass-300">
             <span className="text-sm font-semibold leading-none tabular-nums">
               {formatUtcTime(appointment.startUtc)}
             </span>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-medium text-ink-900">{appointment.serviceName}</p>
             <p className="text-sm text-ink-500">
               com {appointment.barberName} · {formatDateLong(formatUtcDateIso(appointment.startUtc))} ·{" "}

@@ -31,11 +31,14 @@ export function Layout() {
         Pular para o conteúdo
       </a>
       <header className="bg-ink-950">
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3" aria-label="Principal">
+        <nav
+          className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3"
+          aria-label="Principal"
+        >
           <NavLink to="/" className="font-heading text-lg font-semibold tracking-wide text-brass-400">
             Barber Booking
           </NavLink>
-          <ul className="flex items-center gap-1">
+          <ul className="flex flex-wrap items-center justify-end gap-1">
             {navLinks.map((link) => (
               <li key={link.to}>
                 <NavLink to={link.to} className={navLinkClass}>
@@ -50,7 +53,7 @@ export function Layout() {
                   onClick={logout}
                   className="rounded-md px-3 py-2 text-sm font-medium text-ink-200 transition-colors hover:bg-ink-800 hover:text-brass-300"
                 >
-                  Sair ({user.name})
+                  Sair <span className="hidden sm:inline">({user.name})</span>
                 </button>
               ) : (
                 <NavLink to="/login" className={navLinkClass}>

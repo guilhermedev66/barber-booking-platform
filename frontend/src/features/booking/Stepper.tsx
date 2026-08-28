@@ -13,7 +13,7 @@ export function Stepper({ current }: { current: number }) {
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                   state === "done" && "bg-brass-600 text-ink-50",
                   state === "active" && "bg-ink-950 text-brass-300",
-                  state === "upcoming" && "bg-ink-200 text-ink-500",
+                  state === "upcoming" && "bg-ink-200 text-ink-600",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -23,7 +23,7 @@ export function Stepper({ current }: { current: number }) {
               <span
                 className={[
                   "hidden text-sm font-medium sm:inline",
-                  state === "upcoming" ? "text-ink-400" : "text-ink-800",
+                  state === "upcoming" ? "text-ink-500" : "text-ink-800",
                 ].join(" ")}
               >
                 {label}
