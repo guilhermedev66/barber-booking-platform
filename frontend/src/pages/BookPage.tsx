@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router"
 import { Button } from "../components/ui/Button"
 import { ErrorState, LoadingState } from "../components/ui/Feedback"
 import { LinkButton } from "../components/ui/LinkButton"
 import { StatusBadge } from "../components/ui/StatusBadge"
 import { Stepper } from "../features/booking/Stepper"
-import { mockApi } from "../lib/api/mockApi"
+import { api } from "../lib/api/client"
 import type { Appointment, AvailabilitySlot, Barber, Service } from "../lib/api/types"
+import { ApiError } from "../lib/apiClient"
+import { useAuth } from "../lib/auth/AuthContext"
 import {
   addLocalDays,
   BOOKING_TIME_ZONE,
@@ -43,6 +46,8 @@ function useUpcomingDates(count = 7) {
 }
 
 export function BookPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const [step, setStep] = useState(0)
 
   const [services, setServices] = useState<Service[] | null>(null)
@@ -63,6 +68,7 @@ export function BookPage() {
   } | null>(null)
   const [slotsError, setSlotsError] = useState(false)
   const [slotsAttempt, setSlotsAttempt] = useState(0)
+  const [conflictNotice, setConflictNotice] = useState<string | null>(null)
 
   const [confirmedAppointment, setConfirmedAppointment] = useState<Appointment | null>(null)
   const [confirmError, setConfirmError] = useState<string | null>(null)
@@ -73,7 +79,7 @@ export function BookPage() {
     setServices(null)
     setBarbers(null)
     setCatalogError(false)
-    Promise.all([mockApi.listServices(), mockApi.listBarbers()])
+    Promise.all([api.listServices(), api.listBarbers()])
       .then(([serviceList, barberList]) => {
         if (cancelled) return
         setServices(serviceList)
@@ -93,7 +99,7 @@ export function BookPage() {
     setAvailability(null)
     setSlotsError(false)
     setSelectedSlot(null)
-    mockApi
+    api
       .getAvailability(selectedBarber.id, selectedDate, selectedService.id)
       .then((response) => {
         if (!cancelled) setAvailability(response)
@@ -106,6 +112,10 @@ export function BookPage() {
     }
   }, [step, selectedBarber, selectedService, selectedDate, slotsAttempt])
 
+  useEffect(() => {
+    setConflictNotice(null)
+  }, [selectedBarber, selectedDate])
+
   async function handleFirstAvailable() {
     if (!services || !barbers || !selectedService) return
 
@@ -113,7 +123,7 @@ export function BookPage() {
     try {
       for (const date of dates) {
         const availabilities = await Promise.all(
-          barbers.map((barber) => mockApi.getAvailability(barber.id, date, selectedService.id)),
+          barbers.map((barber) => api.getAvailability(barber.id, date, selectedService.id)),
         )
         const first = availabilities
           .map((item, index) => ({ barber: barbers[index], availability: item }))
@@ -134,16 +144,35 @@ export function BookPage() {
 
   async function handleConfirm() {
     if (!selectedService || !selectedBarber || !selectedSlot) return
+
+    if (!user) {
+      navigate("/login")
+      return
+    }
+
     setIsConfirming(true)
     setConfirmError(null)
     try {
-      const appointment = await mockApi.createAppointment({
+      const appointment = await api.createAppointment({
         serviceId: selectedService.id,
         barberId: selectedBarber.id,
         startUtc: selectedSlot.startUtc,
       })
       setConfirmedAppointment(appointment)
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        navigate("/login")
+        return
+      }
+
+      if (error instanceof ApiError && (error.status === 409 || error.status === 404)) {
+        setConflictNotice("Esse horário acabou de ser reservado por outra pessoa. Escolha outro horário.")
+        setSelectedSlot(null)
+        setStep(2)
+        setSlotsAttempt((n) => n + 1)
+        return
+      }
+
       setConfirmError("Não foi possível confirmar o agendamento. Tente novamente.")
     } finally {
       setIsConfirming(false)
@@ -284,6 +313,11 @@ export function BookPage() {
 
         {!catalogError && services && barbers && step === 2 && selectedBarber && (
           <div>
+            {conflictNotice && (
+              <p role="alert" className="mb-4 rounded-md border border-error-100 bg-error-100/40 px-3 py-2.5 text-sm font-medium text-error-600">
+                {conflictNotice}
+              </p>
+            )}
             <div className="flex gap-2 overflow-x-auto pb-2">
               {dates.map((date) => (
                 <button

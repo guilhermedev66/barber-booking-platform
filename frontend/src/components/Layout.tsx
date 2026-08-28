@@ -1,10 +1,6 @@
 import { NavLink, Outlet } from "react-router"
 import { useAuth } from "../lib/auth/AuthContext"
-
-const navLinks = [
-  { to: "/book", label: "Agendar" },
-  { to: "/dashboard", label: "Painel" },
-]
+import { STAFF_ROLES } from "../lib/auth/roles"
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return [
@@ -16,7 +12,15 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 }
 
 export function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasRole } = useAuth()
+  const isStaff = hasRole(...STAFF_ROLES)
+
+  const navLinks = isStaff
+    ? [{ to: "/dashboard", label: "Painel" }]
+    : [
+        { to: "/book", label: "Agendar" },
+        ...(user ? [{ to: "/appointments", label: "Minhas reservas" }] : []),
+      ]
 
   return (
     <div className="flex min-h-screen flex-col">

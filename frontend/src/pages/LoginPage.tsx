@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router"
 import { Button } from "../components/ui/Button"
 import { Field } from "../components/ui/Field"
 import { useAuth } from "../lib/auth/AuthContext"
+import { STAFF_ROLES } from "../lib/auth/roles"
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -17,8 +18,8 @@ export function LoginPage() {
     setError(null)
     setIsSubmitting(true)
     try {
-      await login({ email, password })
-      navigate("/book")
+      const authUser = await login({ email, password })
+      navigate(authUser.roles.some((role) => STAFF_ROLES.includes(role)) ? "/dashboard" : "/book")
     } catch {
       setError("Email ou senha inválidos.")
     } finally {

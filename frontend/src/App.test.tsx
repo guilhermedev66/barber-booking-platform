@@ -15,26 +15,38 @@ function renderApp(initialEntries: string[]) {
 }
 
 describe('App routing', () => {
-  it('renders the home page and nav links by default', () => {
+  it('renders the home page and guest nav links by default', () => {
     renderApp(['/'])
 
     expect(screen.getByRole('heading', { name: /barber booking platform/i })).toBeInTheDocument()
 
     const nav = screen.getByRole('navigation')
     expect(within(nav).getByRole('link', { name: /agendar/i })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /painel/i })).toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: /entrar/i })).toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: /painel/i })).not.toBeInTheDocument()
   })
 
-  it('renders the booking page heading at /book', () => {
+  it('renders the booking page heading at /book for a guest', () => {
     renderApp(['/book'])
 
     expect(screen.getByRole('heading', { name: /agendar horário/i })).toBeInTheDocument()
   })
 
-  it('renders the dashboard page heading at /dashboard', () => {
+  it('redirects to login when a logged-out visitor requests /dashboard', () => {
     renderApp(['/dashboard'])
 
-    expect(screen.getByRole('heading', { name: /painel/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /entrar/i })).toBeInTheDocument()
+  })
+
+  it('redirects to login when a logged-out visitor requests /appointments', () => {
+    renderApp(['/appointments'])
+
+    expect(screen.getByRole('heading', { name: /entrar/i })).toBeInTheDocument()
+  })
+
+  it('renders a 404 page for an unknown route', () => {
+    renderApp(['/nope'])
+
+    expect(screen.getByRole('heading', { name: /página não encontrada/i })).toBeInTheDocument()
   })
 })

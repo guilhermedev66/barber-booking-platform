@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/Feedback"
 import { StatusBadge } from "../components/ui/StatusBadge"
-import { mockApi } from "../lib/api/mockApi"
+import { api } from "../lib/api/client"
 import type { Appointment } from "../lib/api/types"
 import { BOOKING_TIME_ZONE, formatDateLong, formatUtcDateIso, formatUtcTime } from "../lib/format"
 
@@ -14,8 +14,8 @@ export function DashboardPage() {
     let cancelled = false
     setAppointments(null)
     setError(false)
-    mockApi
-      .listAgendaAppointments()
+    api
+      .listAgenda()
       .then((list) => {
         if (!cancelled) setAppointments(list)
       })
@@ -112,7 +112,8 @@ function AppointmentRow({ appointment, showDate = false }: { appointment: Appoin
         <div>
           <p className="font-medium text-ink-900">{appointment.serviceName}</p>
           <p className="text-sm text-ink-500">
-            Cliente reservado{showDate ? ` · ${formatDateLong(formatUtcDateIso(appointment.startUtc))}` : ""}
+            {appointment.clientName ?? "Cliente"}
+            {showDate ? ` · ${formatDateLong(formatUtcDateIso(appointment.startUtc))}` : ""}
           </p>
         </div>
       </div>
