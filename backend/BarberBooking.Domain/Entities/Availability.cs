@@ -2,8 +2,8 @@ namespace BarberBooking.Domain.Entities;
 
 /// <summary>
 /// A barber's working window. Recurring entries repeat weekly on <see cref="DayOfWeek"/>.
-/// Exception entries apply to a single <see cref="Date"/> and either override the working
-/// hours for that day or mark it as a day off (<see cref="IsDayOff"/>).
+/// Exception entries apply to a single <see cref="Date"/> and block an interval from
+/// that day's recurring hours, or mark it as a day off (<see cref="IsDayOff"/>).
 /// </summary>
 public class Availability
 {

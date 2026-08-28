@@ -98,6 +98,13 @@ Os testes de integração do backend usam Testcontainers e exigem Docker ativo.
 - `POST /api/appointments/{id}/cancel` — cancelamento protegido por role e ownership.
 - `GET /api/appointments/mine` — agenda do cliente autenticado.
 - `GET /api/appointments` — agenda do próprio barbeiro; admin recebe todas.
+- `POST /api/barbers/{barberId}/availability/exceptions` — barbeiro bloqueia
+  um intervalo da própria agenda; admin pode bloquear qualquer barbeiro. Payload:
+  `{ date, startTime, endTime, isDayOff }`. Exceções parciais removem slots do
+  intervalo; `isDayOff: true` bloqueia o dia inteiro.
+- `POST /api/appointments/walk-in` — barbeiro/admin cria reserva para cliente
+  presencial sem login, com `{ barberId, serviceId, startUtc, clientName,
+  clientPhone }`; usa a mesma proteção de overlap do agendamento comum.
 
 O intervalo padrão entre inícios de slots é configurado por
 `Booking:SlotIntervalMinutes`. O banco impede sobreposição por barbeiro com

@@ -8,7 +8,7 @@ public class AvailabilitySlotCalculatorTests
     private readonly AvailabilitySlotCalculator _calculator = new();
 
     [Fact]
-    public void ResolveWorkingWindows_UsesDateExceptionInsteadOfRecurringWindow()
+    public void ResolveWorkingWindows_SubtractsDateExceptionFromRecurringWindow()
     {
         var date = new DateOnly(2027, 1, 4);
         var barberId = Guid.NewGuid();
@@ -20,9 +20,11 @@ public class AvailabilitySlotCalculatorTests
 
         var windows = _calculator.ResolveWorkingWindows(date, TimeZoneInfo.Utc, availabilities);
 
-        var window = Assert.Single(windows);
-        Assert.Equal(new DateTime(2027, 1, 4, 10, 0, 0, DateTimeKind.Utc), window.StartUtc);
-        Assert.Equal(new DateTime(2027, 1, 4, 11, 0, 0, DateTimeKind.Utc), window.EndUtc);
+        Assert.Equal(2, windows.Count);
+        Assert.Equal(new DateTime(2027, 1, 4, 9, 0, 0, DateTimeKind.Utc), windows[0].StartUtc);
+        Assert.Equal(new DateTime(2027, 1, 4, 10, 0, 0, DateTimeKind.Utc), windows[0].EndUtc);
+        Assert.Equal(new DateTime(2027, 1, 4, 11, 0, 0, DateTimeKind.Utc), windows[1].StartUtc);
+        Assert.Equal(new DateTime(2027, 1, 4, 17, 0, 0, DateTimeKind.Utc), windows[1].EndUtc);
     }
 
     [Fact]

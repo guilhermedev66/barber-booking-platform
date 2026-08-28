@@ -6,6 +6,7 @@ using BarberBooking.Domain.Services;
 using BarberBooking.Infrastructure;
 using BarberBooking.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -18,7 +19,8 @@ public class AppointmentsController(
     AppDbContext dbContext,
     BookingAvailabilityService availabilityService,
     AppointmentConflictChecker conflictChecker,
-    TimeProvider timeProvider) : ControllerBase
+    TimeProvider timeProvider,
+    UserManager<ApplicationUser> userManager) : ControllerBase
 {
     [Authorize(Roles = Roles.Client)]
     [HttpPost]
@@ -96,6 +98,143 @@ public class AppointmentsController(
         return StatusCode(StatusCodes.Status201Created, new AppointmentResponse(
             appointment.Id,
             User.FindFirstValue(ClaimTypes.Name),
+            appointment.BarberId,
+            availability.BarberName,
+            appointment.ServiceId,
+            availability.ServiceName,
+            (int)availability.ServiceDuration.TotalMinutes,
+            availability.ServicePrice,
+            appointment.StartUtc,
+            appointment.EndUtc,
+            appointment.Status.ToString()));
+    }
+
+    [Authorize(Roles = Roles.Barber + "," + Roles.Admin)]
+    [HttpPost("walk-in")]
+    [ProducesResponseType<AppointmentResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<AppointmentResponse>> CreateWalkIn(
+        CreateWalkInAppointmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.ClientName))
+        {
+            ModelState.AddModelError(nameof(request.ClientName), "ClientName is required.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var barber = await dbContext.Barbers
+            .AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == request.BarberId && item.IsActive, cancellationToken);
+
+        if (barber is null)
+        {
+            return NotFound();
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole(Roles.Admin) && barber.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        var startUtc = request.StartUtc.UtcDateTime;
+        if (startUtc <= timeProvider.GetUtcNow().UtcDateTime)
+        {
+            ModelState.AddModelError(nameof(request.StartUtc), "Appointment start must be in the future.");
+            return ValidationProblem(ModelState);
+        }
+
+        var availability = await availabilityService.GetAsync(
+            request.BarberId,
+            request.ServiceId,
+            availabilityService.GetLocalDate(startUtc),
+            cancellationToken);
+
+        if (availability is null)
+        {
+            return NotFound();
+        }
+
+        var selectedSlot = availability.Slots.SingleOrDefault(slot => slot.StartUtc == startUtc);
+        if (selectedSlot is null)
+        {
+            return BookingConflict("The selected time is not available for this barber and service.");
+        }
+
+        var appointment = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            ClientUserId = string.Empty,
+            BarberId = request.BarberId,
+            ServiceId = request.ServiceId,
+            StartUtc = selectedSlot.StartUtc,
+            EndUtc = selectedSlot.EndUtc,
+            Status = AppointmentStatus.Confirmed
+        };
+
+        var possibleConflicts = await dbContext.Appointments
+            .AsNoTracking()
+            .Where(existing =>
+                existing.BarberId == appointment.BarberId &&
+                existing.Status != AppointmentStatus.Cancelled &&
+                appointment.StartUtc < existing.EndUtc &&
+                existing.StartUtc < appointment.EndUtc)
+            .ToListAsync(cancellationToken);
+
+        if (conflictChecker.HasConflict(appointment, possibleConflicts))
+        {
+            return BookingConflict("The selected time was already booked.");
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var walkInKey = Guid.NewGuid().ToString("N");
+        var walkInUser = new ApplicationUser
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserName = $"walk-in-{walkInKey}@barberbooking.local",
+            Email = $"walk-in-{walkInKey}@barberbooking.local",
+            FullName = request.ClientName.Trim(),
+            PhoneNumber = string.IsNullOrWhiteSpace(request.ClientPhone) ? null : request.ClientPhone.Trim(),
+            EmailConfirmed = true
+        };
+
+        var userResult = await userManager.CreateAsync(walkInUser);
+        if (!userResult.Succeeded)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            foreach (var error in userResult.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return ValidationProblem(ModelState);
+        }
+
+        appointment.ClientUserId = walkInUser.Id;
+        dbContext.Appointments.Add(appointment);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (IsBookingContention(exception))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return BookingConflict("The selected time was already booked.");
+        }
+
+        return StatusCode(StatusCodes.Status201Created, new AppointmentResponse(
+            appointment.Id,
+            request.ClientName.Trim(),
             appointment.BarberId,
             availability.BarberName,
             appointment.ServiceId,
@@ -258,6 +397,13 @@ public sealed record CreateAppointmentRequest(
     [Required] Guid BarberId,
     [Required] Guid ServiceId,
     [Required] DateTimeOffset StartUtc);
+
+public sealed record CreateWalkInAppointmentRequest(
+    [Required] Guid BarberId,
+    [Required] Guid ServiceId,
+    [Required] DateTimeOffset StartUtc,
+    [Required, MinLength(2)] string ClientName,
+    string? ClientPhone);
 
 public sealed record AppointmentResponse(
     Guid Id,

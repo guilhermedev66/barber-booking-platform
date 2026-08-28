@@ -170,6 +170,94 @@ public class BookingApiIntegrationTests(BookingApiFixture fixture)
     }
 
     [Fact]
+    public async Task BarberAvailabilityException_RemovesBlockedSlotsAndProtectsOwnership()
+    {
+        using var barberClient = await LoginAsync(fixture.BarberEmail, fixture.Password);
+        using var adminClient = await LoginAsync(fixture.AdminEmail, fixture.Password);
+        using var publicClient = fixture.CreateClient();
+        var date = fixture.BookingDate.AddDays(7);
+        var blockRequest = new CreateAvailabilityExceptionRequest(
+            date,
+            new TimeOnly(10, 0),
+            new TimeOnly(11, 0));
+
+        var forbidden = await barberClient.PostAsJsonAsync(
+            $"/api/barbers/{fixture.OtherBarberId}/availability/exceptions",
+            blockRequest);
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+
+        var created = await adminClient.PostAsJsonAsync(
+            $"/api/barbers/{fixture.OtherBarberId}/availability/exceptions",
+            blockRequest);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var blockedStart = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(date.ToDateTime(new TimeOnly(10, 0)), DateTimeKind.Unspecified),
+            timeZone);
+        var stillAvailable = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(date.ToDateTime(new TimeOnly(11, 0)), DateTimeKind.Unspecified),
+            timeZone);
+        var availability = await publicClient.GetFromJsonAsync<BarberAvailabilityResponse>(
+            $"/api/barbers/{fixture.OtherBarberId}/availability?date={date:yyyy-MM-dd}&serviceId={fixture.ServiceId}");
+
+        Assert.DoesNotContain(availability!.Slots, slot => slot.StartUtc == blockedStart);
+        Assert.Contains(availability.Slots, slot => slot.StartUtc == stillAvailable);
+    }
+
+    [Fact]
+    public async Task WalkInBooking_UsesOwnershipAndExclusionConstraint()
+    {
+        using var barberClient = await LoginAsync(fixture.BarberEmail, fixture.Password);
+        using var otherBarberClient = await LoginAsync(
+            "other-barber.integration@example.test",
+            fixture.Password);
+        var bookingDate = fixture.BookingDate.AddDays(7);
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var walkInStartUtc = TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(bookingDate.ToDateTime(new TimeOnly(10, 0)), DateTimeKind.Unspecified),
+            timeZone);
+        var request = new CreateWalkInAppointmentRequest(
+            fixture.BarberId,
+            fixture.ServiceId,
+            new DateTimeOffset(walkInStartUtc),
+            "Walk-in Client",
+            "+5511999999999");
+
+        var forbidden = await otherBarberClient.PostAsJsonAsync("/api/appointments/walk-in", request);
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+
+        var firstTask = barberClient.PostAsJsonAsync("/api/appointments/walk-in", request);
+        var secondTask = barberClient.PostAsJsonAsync("/api/appointments/walk-in", request with
+        {
+            ClientName = "Another Walk-in"
+        });
+        var responses = await Task.WhenAll(firstTask, secondTask);
+
+        Assert.Equal(
+            [HttpStatusCode.Created, HttpStatusCode.Conflict],
+            responses.Select(response => response.StatusCode).Order().ToArray());
+
+        using var scope = fixture.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var activeAppointments = await dbContext.Appointments
+            .CountAsync(appointment =>
+                appointment.BarberId == fixture.BarberId &&
+                appointment.StartUtc == walkInStartUtc &&
+                appointment.Status != AppointmentStatus.Cancelled);
+        Assert.Equal(1, activeAppointments);
+
+        var createdResponse = responses.Single(response => response.StatusCode == HttpStatusCode.Created);
+        var created = await createdResponse.Content.ReadFromJsonAsync<AppointmentResponse>();
+        Assert.NotNull(created);
+
+        var cancelled = await barberClient.PostAsync(
+            $"/api/appointments/{created!.Id}/cancel",
+            content: null);
+        Assert.Equal(HttpStatusCode.NoContent, cancelled.StatusCode);
+    }
+
+    [Fact]
     public async Task BookingRaceStress_AlwaysCreatesExactlyOneActiveAppointment()
     {
         using var publicClient = fixture.CreateClient();

@@ -23,22 +23,35 @@ public class AvailabilitySlotCalculator
             return [];
         }
 
-        var selected = exceptions.Count > 0
-            ? exceptions
-            : entries
-                .Where(a =>
-                    a.Type == AvailabilityType.Recurring &&
-                    a.DayOfWeek == date.DayOfWeek)
-                .ToList();
-
-        return selected
-            .Where(a => !a.IsDayOff && a.StartTime < a.EndTime)
+        var recurringWindows = entries
+            .Where(a =>
+                a.Type == AvailabilityType.Recurring &&
+                a.DayOfWeek == date.DayOfWeek &&
+                !a.IsDayOff &&
+                a.StartTime < a.EndTime)
             .Select(a => new AvailabilityWindow(
                 ToUtc(date, a.StartTime, timeZone),
                 ToUtc(date, a.EndTime, timeZone)))
             .Distinct()
             .OrderBy(window => window.StartUtc)
             .ToList();
+
+        var blockedWindows = exceptions
+            .Where(a => !a.IsDayOff && a.StartTime < a.EndTime)
+            .Select(a => new AvailabilityWindow(
+                ToUtc(date, a.StartTime, timeZone),
+                ToUtc(date, a.EndTime, timeZone)))
+            .OrderBy(window => window.StartUtc)
+            .ToList();
+
+        foreach (var blockedWindow in blockedWindows)
+        {
+            recurringWindows = recurringWindows
+                .SelectMany(window => Subtract(window, blockedWindow))
+                .ToList();
+        }
+
+        return recurringWindows;
     }
 
     public IReadOnlyList<AvailabilitySlot> CalculateAvailableSlots(
@@ -101,5 +114,26 @@ public class AvailabilitySlotCalculator
         }
 
         return TimeZoneInfo.ConvertTimeToUtc(localDateTime, timeZone);
+    }
+
+    private static IEnumerable<AvailabilityWindow> Subtract(
+        AvailabilityWindow source,
+        AvailabilityWindow blocked)
+    {
+        if (blocked.EndUtc <= source.StartUtc || blocked.StartUtc >= source.EndUtc)
+        {
+            yield return source;
+            yield break;
+        }
+
+        if (source.StartUtc < blocked.StartUtc)
+        {
+            yield return new AvailabilityWindow(source.StartUtc, blocked.StartUtc);
+        }
+
+        if (blocked.EndUtc < source.EndUtc)
+        {
+            yield return new AvailabilityWindow(blocked.EndUtc, source.EndUtc);
+        }
     }
 }
