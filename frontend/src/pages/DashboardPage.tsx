@@ -3,9 +3,7 @@ import { EmptyState, ErrorState, LoadingState } from "../components/ui/Feedback"
 import { StatusBadge } from "../components/ui/StatusBadge"
 import { mockApi } from "../lib/api/mockApi"
 import type { Appointment } from "../lib/api/types"
-import { formatDateLong } from "../lib/format"
-
-const todayIso = new Date().toISOString().slice(0, 10)
+import { BOOKING_TIME_ZONE, formatDateLong, formatUtcDateIso, formatUtcTime } from "../lib/format"
 
 export function DashboardPage() {
   const [appointments, setAppointments] = useState<Appointment[] | null>(null)
@@ -17,7 +15,7 @@ export function DashboardPage() {
     setAppointments(null)
     setError(false)
     mockApi
-      .listMyAppointments()
+      .listAgendaAppointments()
       .then((list) => {
         if (!cancelled) setAppointments(list)
       })
@@ -31,12 +29,15 @@ export function DashboardPage() {
 
   const { today, upcoming } = useMemo(() => {
     if (!appointments) return { today: [], upcoming: [] }
+    const todayIso = formatUtcDateIso(new Date().toISOString(), BOOKING_TIME_ZONE)
     const active = appointments.filter((item) => item.status !== "Cancelled")
     return {
-      today: active.filter((item) => item.date === todayIso).sort((a, b) => a.time.localeCompare(b.time)),
+      today: active
+        .filter((item) => formatUtcDateIso(item.startUtc, BOOKING_TIME_ZONE) === todayIso)
+        .sort((a, b) => a.startUtc.localeCompare(b.startUtc)),
       upcoming: active
-        .filter((item) => item.date > todayIso)
-        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
+        .filter((item) => formatUtcDateIso(item.startUtc, BOOKING_TIME_ZONE) > todayIso)
+        .sort((a, b) => a.startUtc.localeCompare(b.startUtc)),
     }
   }, [appointments])
 
@@ -106,12 +107,12 @@ function AppointmentRow({ appointment, showDate = false }: { appointment: Appoin
     <li className="flex items-center justify-between gap-4 rounded-lg border border-ink-200 bg-white/60 px-4 py-3">
       <div className="flex items-center gap-4">
         <div className="flex w-14 flex-col items-center justify-center rounded-md bg-ink-950 py-1.5 text-brass-300">
-          <span className="text-sm font-semibold leading-none tabular-nums">{appointment.time}</span>
+          <span className="text-sm font-semibold leading-none tabular-nums">{formatUtcTime(appointment.startUtc)}</span>
         </div>
         <div>
           <p className="font-medium text-ink-900">{appointment.serviceName}</p>
           <p className="text-sm text-ink-500">
-            Cliente reservado{showDate ? ` · ${formatDateLong(appointment.date)}` : ""}
+            Cliente reservado{showDate ? ` · ${formatDateLong(formatUtcDateIso(appointment.startUtc))}` : ""}
           </p>
         </div>
       </div>

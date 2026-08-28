@@ -30,28 +30,27 @@ function readStoredUser(): AuthUser | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readStoredUser())
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
+  const value = useMemo<AuthContextValue>(() => {
+    async function authenticate(payload: LoginPayload) {
+      const response = await mockApi.login(payload)
+      const authUser = { name: response.user.fullName ?? response.user.email, token: response.accessToken }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
+      setUser(authUser)
+    }
+
+    return {
       user,
-      async login(payload) {
-        const response = await mockApi.login(payload)
-        const authUser = { name: response.name, token: response.token }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
-        setUser(authUser)
-      },
+      login: authenticate,
       async register(payload) {
-        const response = await mockApi.register(payload)
-        const authUser = { name: response.name, token: response.token }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
-        setUser(authUser)
+        await mockApi.register(payload)
+        await authenticate({ email: payload.email, password: payload.password })
       },
       logout() {
         localStorage.removeItem(STORAGE_KEY)
         setUser(null)
       },
-    }),
-    [user],
-  )
+    }
+  }, [user])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -1,37 +1,46 @@
 export interface Service {
   id: string
   name: string
-  description: string
   durationMinutes: number
-  priceCents: number
+  price: number
 }
+
+export interface BarberService extends Service {}
 
 export interface Barber {
   id: string
-  name: string
-  title: string
-  bio: string
-  initials: string
+  displayName: string
+  bio: string | null
+  services: BarberService[]
 }
 
 export type AppointmentStatus = "Pending" | "Confirmed" | "Cancelled" | "Completed"
 
 export interface Appointment {
   id: string
-  serviceId: string
-  serviceName: string
+  clientName: string | null
   barberId: string
   barberName: string
-  date: string
-  time: string
+  serviceId: string
+  serviceName: string
+  durationMinutes: number
+  price: number
+  startUtc: string
+  endUtc: string
   status: AppointmentStatus
 }
 
+export interface AvailabilitySlot {
+  startUtc: string
+  endUtc: string
+}
+
 export interface AvailabilityResponse {
-  date: string
   barberId: string
   serviceId: string
-  slots: string[]
+  date: string
+  timeZoneId: string
+  slots: AvailabilitySlot[]
 }
 
 export interface LoginPayload {
@@ -40,14 +49,30 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  name: string
+  fullName: string
   email: string
   password: string
 }
 
-export interface AuthResponse {
-  token: string
-  name: string
+export interface RegisteredUserResponse {
+  id: string
+  fullName: string | null
+  email: string
+  roles: string[]
+}
+
+export interface AuthenticatedUser {
+  id: string
+  fullName: string | null
+  email: string
+  roles: string[]
+}
+
+export interface LoginResponse {
+  accessToken: string
+  tokenType: string
+  expiresAtUtc: string
+  user: AuthenticatedUser
 }
 
 export interface CreateAppointmentPayload {

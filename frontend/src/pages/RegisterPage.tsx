@@ -17,14 +17,14 @@ export function RegisterPage() {
     event.preventDefault()
     setError(null)
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres.")
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.")
       return
     }
 
     setIsSubmitting(true)
     try {
-      await register({ name, email, password })
+      await register({ fullName: name, email, password })
       navigate("/book")
     } catch {
       setError("Não foi possível criar sua conta. Tente novamente.")
@@ -63,8 +63,8 @@ export function RegisterPage() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
-          hint="Mínimo de 6 caracteres."
+          minLength={8}
+          hint="Mínimo de 8 caracteres."
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="••••••••"
