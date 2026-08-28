@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useState } from "react"
+import { Button } from "../components/ui/Button"
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/Feedback"
+import { Modal } from "../components/ui/Modal"
 import { StatusBadge } from "../components/ui/StatusBadge"
+import { BlockTimeForm } from "../features/dashboard/BlockTimeForm"
+import { ChairTimeline } from "../features/dashboard/ChairTimeline"
+import { WalkInForm } from "../features/dashboard/WalkInForm"
 import { api } from "../lib/api/client"
-import type { Appointment } from "../lib/api/types"
+import type { Appointment, Barber } from "../lib/api/types"
 import { BOOKING_TIME_ZONE, formatDateLong, formatUtcDateIso, formatUtcTime } from "../lib/format"
+import { useAuth } from "../lib/auth/AuthContext"
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const [appointments, setAppointments] = useState<Appointment[] | null>(null)
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const [myBarber, setMyBarber] = useState<Barber | null>(null)
+  const [openModal, setOpenModal] = useState<"block" | "walk-in" | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -26,6 +35,25 @@ export function DashboardPage() {
       cancelled = true
     }
   }, [attempt])
+
+  useEffect(() => {
+    if (!appointments) return
+    let cancelled = false
+    api.listBarbers().then((list) => {
+      if (cancelled) return
+      const fromAgenda = appointments.length > 0 ? list.find((b) => b.id === appointments[0].barberId) : null
+      const fromName = list.find((b) => b.displayName === user?.name)
+      setMyBarber(fromAgenda ?? fromName ?? null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [appointments, user?.name])
+
+  function handleActionSuccess() {
+    setOpenModal(null)
+    setAttempt((n) => n + 1)
+  }
 
   const { today, upcoming } = useMemo(() => {
     if (!appointments) return { today: [], upcoming: [] }
@@ -49,8 +77,31 @@ export function DashboardPage() {
 
   return (
     <section className="pb-8">
-      <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl">Painel</h1>
-      <p className="mt-1 text-sm text-ink-500">Agenda do dia e próximos agendamentos.</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl">Painel</h1>
+          <p className="mt-1 text-sm text-ink-500">Agenda do dia e próximos agendamentos.</p>
+        </div>
+        {myBarber && (
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setOpenModal("block")}>
+              Bloquear horário
+            </Button>
+            <Button onClick={() => setOpenModal("walk-in")}>Encaixe rápido</Button>
+          </div>
+        )}
+      </div>
+
+      {myBarber && (
+        <>
+          <Modal open={openModal === "block"} onClose={() => setOpenModal(null)} title="Bloquear horário">
+            <BlockTimeForm barberId={myBarber.id} onSuccess={handleActionSuccess} />
+          </Modal>
+          <Modal open={openModal === "walk-in"} onClose={() => setOpenModal(null)} title="Encaixe rápido">
+            <WalkInForm barberId={myBarber.id} services={myBarber.services} onSuccess={handleActionSuccess} />
+          </Modal>
+        </>
+      )}
 
       {error && <ErrorState onRetry={() => setAttempt((n) => n + 1)} />}
 
@@ -74,11 +125,9 @@ export function DashboardPage() {
                 <EmptyState title="Nenhum agendamento hoje" description="A agenda de hoje está livre." />
               </div>
             ) : (
-              <ol className="mt-3 flex flex-col gap-2">
-                {today.map((appointment) => (
-                  <AppointmentRow key={appointment.id} appointment={appointment} />
-                ))}
-              </ol>
+              <div className="mt-5 rounded-lg border border-ink-200 bg-white/60 p-5">
+                <ChairTimeline appointments={today} />
+              </div>
             )}
           </div>
 

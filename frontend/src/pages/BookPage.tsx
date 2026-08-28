@@ -4,6 +4,7 @@ import { Button } from "../components/ui/Button"
 import { ErrorState, LoadingState } from "../components/ui/Feedback"
 import { LinkButton } from "../components/ui/LinkButton"
 import { StatusBadge } from "../components/ui/StatusBadge"
+import { ReceiptRow, ReceiptTotal, TicketFrame } from "../features/booking/Receipt"
 import { Stepper } from "../features/booking/Stepper"
 import { api } from "../lib/api/client"
 import type { Appointment, AvailabilitySlot, Barber, Service } from "../lib/api/types"
@@ -13,29 +14,15 @@ import {
   addLocalDays,
   BOOKING_TIME_ZONE,
   formatDateLabel,
+  formatUtcDateIso,
   formatUtcDateLong,
   formatUtcTime,
   formatDuration,
   formatPrice,
   localDateIso,
 } from "../lib/format"
-
-const PERIODS = [
-  { label: "Manhã", from: 0, to: 12 },
-  { label: "Tarde", from: 12, to: 18 },
-  { label: "Noite", from: 18, to: 24 },
-]
-
-function groupSlotsByPeriod(slots: AvailabilitySlot[], timeZoneId: string) {
-  return PERIODS.map((period) => ({
-    label: period.label,
-    slots: slots.filter((slot) => {
-      const time = formatUtcTime(slot.startUtc, timeZoneId)
-      const hour = Number(time.slice(0, 2))
-      return hour >= period.from && hour < period.to
-    }).map((slot) => ({ slot, time: formatUtcTime(slot.startUtc, timeZoneId) })),
-  })).filter((group) => group.slots.length > 0)
-}
+import { buildIcsContent, downloadIcsFile } from "../lib/ics"
+import { groupSlotsByPeriod } from "../lib/slots"
 
 function useUpcomingDates(count = 7) {
   return useMemo(() => {
@@ -179,6 +166,18 @@ export function BookPage() {
     }
   }
 
+  function handleAddToCalendar() {
+    if (!confirmedAppointment) return
+    const content = buildIcsContent({
+      uid: `${confirmedAppointment.id}@barberbooking`,
+      summary: `${confirmedAppointment.serviceName} — Barber Booking`,
+      description: `Com ${confirmedAppointment.barberName}`,
+      startUtc: confirmedAppointment.startUtc,
+      endUtc: confirmedAppointment.endUtc,
+    })
+    downloadIcsFile(`agendamento-${formatUtcDateIso(confirmedAppointment.startUtc)}.ics`, content)
+  }
+
   function resetBooking() {
     setStep(0)
     setSelectedService(null)
@@ -194,21 +193,35 @@ export function BookPage() {
       <section className="mx-auto max-w-md py-10 text-center">
         <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Tudo certo</span>
         <h1 className="mt-3 font-heading text-3xl font-semibold text-ink-950">Agendamento confirmado</h1>
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-lg border border-ink-200 bg-white/60 p-6 text-left">
-          <div className="flex w-full items-center justify-between">
-            <p className="font-heading text-lg font-semibold text-ink-900">{confirmedAppointment.serviceName}</p>
-            <StatusBadge status={confirmedAppointment.status} />
-          </div>
-          <p className="text-sm text-ink-500">com {confirmedAppointment.barberName}</p>
-          <p className="text-sm text-ink-700">
-            {formatUtcDateLong(confirmedAppointment.startUtc)} às{" "}
-            <span className="tabular-nums">{formatUtcTime(confirmedAppointment.startUtc)}</span>
-          </p>
+
+        <div className="mt-6 text-left">
+          <TicketFrame>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Comanda</p>
+                <p className="mt-1 font-heading text-xl font-semibold text-ink-950">
+                  {confirmedAppointment.serviceName}
+                </p>
+              </div>
+              <StatusBadge status={confirmedAppointment.status} />
+            </div>
+            <dl className="mt-5 flex flex-col gap-3">
+              <ReceiptRow label="Barbeiro" value={confirmedAppointment.barberName} />
+              <ReceiptRow label="Data" value={formatUtcDateLong(confirmedAppointment.startUtc)} />
+              <ReceiptRow label="Horário" value={formatUtcTime(confirmedAppointment.startUtc)} mono />
+              <ReceiptRow label="Código" value={confirmedAppointment.id.slice(0, 8).toUpperCase()} mono />
+            </dl>
+            <ReceiptTotal value={formatPrice(confirmedAppointment.price)} />
+          </TicketFrame>
         </div>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
           <LinkButton to="/dashboard" variant="secondary">
             Ver painel
           </LinkButton>
+          <Button variant="secondary" onClick={handleAddToCalendar}>
+            Adicionar ao calendário
+          </Button>
           <Button onClick={resetBooking}>Agendar outro horário</Button>
         </div>
       </section>
@@ -318,22 +331,36 @@ export function BookPage() {
                 {conflictNotice}
               </p>
             )}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {dates.map((date) => (
-                <button
-                  key={date}
-                  type="button"
-                  onClick={() => setSelectedDate(date)}
-                  className={[
-                    "shrink-0 rounded-md border px-3.5 py-2.5 text-sm font-medium capitalize transition-colors",
-                    selectedDate === date
-                      ? "border-ink-950 bg-ink-950 text-brass-300"
-                      : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400",
-                  ].join(" ")}
-                >
-                  {formatDateLabel(date)}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-1 gap-2 overflow-x-auto pb-2">
+                {dates.map((date) => (
+                  <button
+                    key={date}
+                    type="button"
+                    onClick={() => setSelectedDate(date)}
+                    className={[
+                      "shrink-0 rounded-md border px-3.5 py-2.5 text-sm font-medium capitalize transition-colors",
+                      selectedDate === date
+                        ? "border-ink-950 bg-ink-950 text-brass-300"
+                        : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400",
+                    ].join(" ")}
+                  >
+                    {formatDateLabel(date)}
+                  </button>
+                ))}
+              </div>
+              <label className="shrink-0 pb-2">
+                <span className="sr-only">Escolher outra data</span>
+                <input
+                  type="date"
+                  min={dates[0]}
+                  value={dates.includes(selectedDate) ? "" : selectedDate}
+                  onChange={(event) => {
+                    if (event.target.value) setSelectedDate(event.target.value)
+                  }}
+                  className="rounded-md border border-ink-200 bg-white/60 px-3 py-2.5 text-sm font-medium text-ink-700 outline-none transition-colors focus:border-brass-500"
+                />
+              </label>
             </div>
 
             <div className="mt-6">
@@ -388,28 +415,20 @@ export function BookPage() {
 
         {!catalogError && services && barbers && step === 3 && selectedService && selectedBarber && selectedSlot && (
           <div className="mx-auto max-w-md">
-            <div className="flex flex-col gap-4 rounded-lg border border-ink-200 bg-white/60 p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-500">Serviço</span>
-                <span className="text-right font-medium text-ink-900">{selectedService.name}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-500">Barbeiro</span>
-                <span className="text-right font-medium text-ink-900">{selectedBarber.displayName}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-500">Quando</span>
-                <span className="text-right font-medium capitalize text-ink-900">
-                  {formatDateLabel(selectedDate)}, <span className="tabular-nums">{formatUtcTime(selectedSlot.startUtc, availability?.timeZoneId ?? BOOKING_TIME_ZONE)}</span>
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-t border-ink-200 pt-4">
-                <span className="text-xs font-semibold uppercase tracking-wide text-ink-500">Total</span>
-                <span className="text-right font-heading text-lg font-semibold text-brass-700 tabular-nums">
-                  {formatPrice(selectedService.price)}
-                </span>
-              </div>
-            </div>
+            <TicketFrame>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Resumo</p>
+              <p className="mt-1 font-heading text-xl font-semibold text-ink-950">{selectedService.name}</p>
+              <dl className="mt-5 flex flex-col gap-3">
+                <ReceiptRow label="Barbeiro" value={selectedBarber.displayName} />
+                <ReceiptRow label="Data" value={formatDateLabel(selectedDate)} />
+                <ReceiptRow
+                  label="Horário"
+                  value={formatUtcTime(selectedSlot.startUtc, availability?.timeZoneId ?? BOOKING_TIME_ZONE)}
+                  mono
+                />
+              </dl>
+              <ReceiptTotal value={formatPrice(selectedService.price)} />
+            </TicketFrame>
 
             {confirmError && (
               <p role="alert" className="mt-4 text-sm font-medium text-error-600">

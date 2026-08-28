@@ -1,9 +1,12 @@
 import { apiClient } from "../apiClient"
 import type {
   Appointment,
+  AvailabilityException,
   AvailabilityResponse,
   Barber,
   CreateAppointmentPayload,
+  CreateAvailabilityExceptionPayload,
+  CreateWalkInPayload,
   LoginPayload,
   LoginResponse,
   RegisterPayload,
@@ -41,6 +44,21 @@ export const api = {
   /** Barber/Admin agenda. */
   listAgenda(): Promise<Appointment[]> {
     return apiClient.get<Appointment[]>("/api/appointments", { auth: true })
+  },
+
+  createWalkInAppointment(payload: CreateWalkInPayload): Promise<Appointment> {
+    return apiClient.post<Appointment>("/api/appointments/walk-in", payload, { auth: true })
+  },
+
+  createAvailabilityException(
+    barberId: string,
+    payload: CreateAvailabilityExceptionPayload,
+  ): Promise<AvailabilityException> {
+    return apiClient.post<AvailabilityException>(
+      `/api/barbers/${barberId}/availability/exceptions`,
+      payload,
+      { auth: true },
+    )
   },
 
   login(payload: LoginPayload): Promise<LoginResponse> {

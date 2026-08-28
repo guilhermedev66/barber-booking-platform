@@ -80,3 +80,27 @@ export interface CreateAppointmentPayload {
   barberId: string
   startUtc: string
 }
+
+export interface CreateWalkInPayload {
+  barberId: string
+  serviceId: string
+  startUtc: string
+  clientName: string
+  clientPhone?: string
+}
+
+export interface CreateAvailabilityExceptionPayload {
+  date: string
+  startTime: string
+  endTime: string
+  isDayOff: boolean
+}
+
+export interface AvailabilityException {
+  id: string
+  barberId: string
+  date: string
+  startTime: string
+  endTime: string
+  isDayOff: boolean
+}
