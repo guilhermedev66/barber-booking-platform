@@ -14,9 +14,12 @@ RUN dotnet publish "BarberBooking.Api/BarberBooking.Api.csproj" \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tzdata \
+    && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 
 COPY --from=build /app/publish .
 USER $APP_UID
-ENTRYPOINT ["dotnet", "BarberBooking.Api.dll"]
+ENTRYPOINT ["sh", "-c", "exec dotnet BarberBooking.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]

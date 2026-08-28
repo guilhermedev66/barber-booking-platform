@@ -88,6 +88,35 @@ portas `5173` (dev) e `4173` (preview), para `localhost` e `127.0.0.1`.
 
 Os testes de integração do backend usam Testcontainers e exigem Docker ativo.
 
+## Deploy — Production
+
+Em produção, configure estas variáveis no provedor (nunca versione os valores):
+
+- `ASPNETCORE_ENVIRONMENT=Production`
+- `ConnectionStrings__Default` — connection string do Neon com `sslmode=require`
+  (preferencialmente `channel_binding=require` quando disponível).
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Jwt__SigningKey` — mínimo de 32 bytes, gerado aleatoriamente.
+- `Jwt__ExpiryMinutes` — duração positiva do token.
+- `Cors__AllowedOrigins__0` — origin HTTPS exato da Vercel, sem wildcard.
+- `Database__ApplyMigrationsOnStartup=false` — migrations são aplicadas como
+  etapa manual/one-off controlada antes de liberar a API.
+- `DemoData__SeedOnStartup=false` — seed demonstrativo só funciona em
+  Development.
+
+O Render injeta `PORT`; o Dockerfile faz a API escutar em `0.0.0.0:$PORT`, com
+fallback local para `8080`. Use `/health` como healthcheck público; ele não
+exige autenticação. O middleware de forwarded headers aceita `X-Forwarded-For`
+e `X-Forwarded-Proto` do proxy do Render antes de redirects/HSTS.
+
+Para aplicar o schema do Neon de forma controlada, execute `dotnet ef database
+update --project backend/BarberBooking.Infrastructure --startup-project
+backend/BarberBooking.Api` com as mesmas variáveis de produção e só depois
+inicie a API. A migration cria `btree_gist` e a exclusion constraint GiST usada
+contra double-booking; Neon suporta essa extensão e o tipo de range do
+PostgreSQL. O Swagger/OpenAPI fica exposto apenas em Development.
+
 ## API — Milestone 1
 
 - `POST /api/auth/register` — cria usuário com role `Client`.

@@ -5,6 +5,7 @@ using BarberBooking.Domain.Services;
 using BarberBooking.Infrastructure;
 using BarberBooking.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,6 +16,15 @@ var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "Frontend";
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Render terminates TLS at its proxy. The container is not directly exposed publicly.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var allowedFrontendOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -57,6 +67,7 @@ builder.Services
         !string.IsNullOrWhiteSpace(options.Audience),
         "Jwt issuer and audience are required.")
     .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.SigningKey) &&
         Encoding.UTF8.GetByteCount(options.SigningKey) >= 32,
         "Jwt signing key must be at least 32 bytes.")
     .Validate(options => options.ExpiryMinutes > 0, "Jwt expiry must be positive.")
@@ -134,6 +145,14 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler();
+    app.UseHsts();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -145,7 +164,8 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-    var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+    var applyMigrationsOnStartup = app.Environment.IsDevelopment() &&
+                                   builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
     var seedDevelopmentData = app.Environment.IsDevelopment() &&
                               builder.Configuration.GetValue<bool>("DemoData:SeedOnStartup");
 
@@ -169,7 +189,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
