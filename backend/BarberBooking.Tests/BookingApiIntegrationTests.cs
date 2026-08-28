@@ -14,6 +14,25 @@ namespace BarberBooking.Tests;
 public class BookingApiIntegrationTests(BookingApiFixture fixture)
 {
     [Fact]
+    public async Task Registration_AcceptsPasswordWithOnlyEightCharacters()
+    {
+        using var client = fixture.CreateClient();
+        var email = $"simple-password-{Guid.NewGuid():N}@example.test";
+
+        var registerResponse = await client.PostAsJsonAsync(
+            "/api/auth/register",
+            new RegisterRequest("Simple Password", email, "12345678"));
+
+        Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
+
+        var loginResponse = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(email, "12345678"));
+
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task BookingEngine_EnforcesAuthAvailabilityOwnershipAndConcurrentDoubleBooking()
     {
         using var publicClient = fixture.CreateClient();
@@ -150,6 +169,57 @@ public class BookingApiIntegrationTests(BookingApiFixture fixture)
         Assert.Equal(PostgresErrorCodes.ExclusionViolation, exclusionViolation!.SqlState);
     }
 
+    [Fact]
+    public async Task BookingRaceStress_AlwaysCreatesExactlyOneActiveAppointment()
+    {
+        using var publicClient = fixture.CreateClient();
+        var firstEmail = $"stress-one-{Guid.NewGuid():N}@example.test";
+        var secondEmail = $"stress-two-{Guid.NewGuid():N}@example.test";
+        await RegisterAsync(publicClient, firstEmail, "Stress One");
+        await RegisterAsync(publicClient, secondEmail, "Stress Two");
+
+        using var firstClient = await LoginAsync(firstEmail, fixture.Password);
+        using var secondClient = await LoginAsync(secondEmail, fixture.Password);
+        var request = new CreateAppointmentRequest(
+            fixture.BarberId,
+            fixture.ServiceId,
+            new DateTimeOffset(fixture.BookingStartUtc));
+
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var firstBookingTask = PostBookingAfterSignalAsync(firstClient, request, gate.Task);
+            var secondBookingTask = PostBookingAfterSignalAsync(secondClient, request, gate.Task);
+            gate.SetResult(true);
+
+            var responses = await Task.WhenAll(firstBookingTask, secondBookingTask);
+            Assert.Equal(
+                [HttpStatusCode.Created, HttpStatusCode.Conflict],
+                responses.Select(response => response.StatusCode).Order().ToArray());
+
+            var createdResponse = responses.Single(response => response.StatusCode == HttpStatusCode.Created);
+            var created = await createdResponse.Content.ReadFromJsonAsync<AppointmentResponse>();
+            Assert.NotNull(created);
+
+            using var scope = fixture.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var activeAppointments = await dbContext.Appointments
+                .CountAsync(appointment =>
+                    appointment.BarberId == fixture.BarberId &&
+                    appointment.StartUtc == fixture.BookingStartUtc &&
+                    appointment.Status != AppointmentStatus.Cancelled);
+            Assert.Equal(1, activeAppointments);
+
+            var winnerClient = responses[0].StatusCode == HttpStatusCode.Created
+                ? firstClient
+                : secondClient;
+            var cancellationResponse = await winnerClient.PostAsync(
+                $"/api/appointments/{created!.Id}/cancel",
+                content: null);
+            Assert.Equal(HttpStatusCode.NoContent, cancellationResponse.StatusCode);
+        }
+    }
+
     private async Task RegisterAsync(HttpClient client, string email, string fullName)
     {
         var response = await client.PostAsJsonAsync(
@@ -172,6 +242,15 @@ public class BookingApiIntegrationTests(BookingApiFixture fixture)
         authenticatedClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(login!.TokenType, login.AccessToken);
         return authenticatedClient;
+    }
+
+    private static async Task<HttpResponseMessage> PostBookingAfterSignalAsync(
+        HttpClient client,
+        CreateAppointmentRequest request,
+        Task signal)
+    {
+        await signal;
+        return await client.PostAsJsonAsync("/api/appointments", request);
     }
 
     private async Task AssertExclusionConstraintExistsAsync()
