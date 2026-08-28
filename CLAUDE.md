@@ -95,8 +95,8 @@ Em produção, configure estas variáveis no provedor (nunca versione os valores
 - `ASPNETCORE_ENVIRONMENT=Production`
 - `ConnectionStrings__Default` — connection string do Neon com `sslmode=require`
   (preferencialmente `channel_binding=require` quando disponível).
-- `Jwt__Issuer`
-- `Jwt__Audience`
+- `Jwt__Issuer` e `Jwt__Audience` são identificadores fixos com defaults no
+  `appsettings.json`; só configure essas variáveis se precisar sobrescrevê-los.
 - `Jwt__SigningKey` — mínimo de 32 bytes, gerado aleatoriamente.
 - `Jwt__ExpiryMinutes` — duração positiva do token.
 - `Cors__AllowedOrigins__0` — origin HTTPS exato da Vercel, sem wildcard.
