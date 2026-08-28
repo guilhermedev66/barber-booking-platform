@@ -68,6 +68,28 @@ npm run dev
 npm test
 ```
 
+Os testes de integração do backend usam Testcontainers e exigem Docker ativo.
+
+## API — Milestone 1
+
+- `POST /api/auth/register` — cria usuário com role `Client`.
+- `POST /api/auth/login` — retorna JWT bearer com claims de usuário e roles.
+- `GET /api/services` — lista serviços ativos.
+- `GET /api/barbers` — lista barbeiros ativos e os serviços atendidos.
+- `GET /api/barbers/{id}/availability?date=YYYY-MM-DD&serviceId={guid}` —
+  retorna slots UTC livres; `date` usa o fuso configurado em `Booking:TimeZoneId`.
+- `POST /api/appointments` — cliente autenticado agenda com
+  `{ barberId, serviceId, startUtc }`.
+- `POST /api/appointments/{id}/cancel` — cancelamento protegido por role e ownership.
+- `GET /api/appointments/mine` — agenda do cliente autenticado.
+- `GET /api/appointments` — agenda do próprio barbeiro; admin recebe todas.
+
+O intervalo padrão entre inícios de slots é configurado por
+`Booking:SlotIntervalMinutes`. O banco impede sobreposição por barbeiro com
+exclusion constraint GiST sobre `[StartUtc, EndUtc)`, ignorando cancelados.
+
 ## Status
 
-Projeto em bootstrap inicial (scaffold backend + frontend em andamento).
+Milestone 1 do backend concluído: autenticação, catálogo, disponibilidade,
+agendamento/cancelamento, autorização por ownership/roles e proteção concorrente
+contra double booking. Frontend segue evoluindo separadamente.

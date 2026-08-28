@@ -14,4 +14,6 @@ public class Barber
     public bool IsActive { get; set; } = true;
 
     public ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
+
+    public ICollection<Service> Services { get; set; } = new List<Service>();
 }

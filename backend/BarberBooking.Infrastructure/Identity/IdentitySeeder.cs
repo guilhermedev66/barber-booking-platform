@@ -10,7 +10,12 @@ public static class IdentitySeeder
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
+                var result = await roleManager.CreateAsync(new IdentityRole(role));
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(error => error.Description));
+                    throw new InvalidOperationException($"Could not create role '{role}': {errors}");
+                }
             }
         }
     }

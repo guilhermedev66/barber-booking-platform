@@ -1,12 +1,15 @@
 using System.Text;
 using BarberBooking.Api.Options;
+using BarberBooking.Api.Services;
 using BarberBooking.Domain.Services;
 using BarberBooking.Infrastructure;
 using BarberBooking.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,9 +26,40 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-    ?? throw new InvalidOperationException("Jwt configuration section is missing.");
+builder.Services
+    .AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .Validate(options =>
+        !string.IsNullOrWhiteSpace(options.Issuer) &&
+        !string.IsNullOrWhiteSpace(options.Audience),
+        "Jwt issuer and audience are required.")
+    .Validate(options =>
+        Encoding.UTF8.GetByteCount(options.SigningKey) >= 32,
+        "Jwt signing key must be at least 32 bytes.")
+    .Validate(options => options.ExpiryMinutes > 0, "Jwt expiry must be positive.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddOptions<BookingOptions>()
+    .Bind(builder.Configuration.GetSection(BookingOptions.SectionName))
+    .Validate(options => options.SlotIntervalMinutes > 0, "Booking slot interval must be positive.")
+    .Validate(options =>
+    {
+        try
+        {
+            _ = TimeZoneInfo.FindSystemTimeZoneById(options.TimeZoneId);
+            return true;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return false;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return false;
+        }
+    }, "Booking time zone is invalid.")
+    .ValidateOnStart();
 
 builder.Services
     .AddAuthentication(options =>
@@ -33,8 +67,14 @@ builder.Services
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
-    .AddJwtBearer(options =>
+    .AddJwtBearer();
+
+builder.Services
+    .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((options, jwtOptionsAccessor) =>
     {
+        var jwtOptions = jwtOptionsAccessor.Value;
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -43,16 +83,31 @@ builder.Services
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtOptions.Issuer,
             ValidAudience = jwtOptions.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
+            RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };
     });
 
 builder.Services.AddAuthorization();
 
 builder.Services.AddSingleton<AppointmentConflictChecker>();
+builder.Services.AddSingleton<AvailabilitySlotCalculator>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<BookingAvailabilityService>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT returned by POST /api/auth/login."
+    });
+});
 
 var app = builder.Build();
 
@@ -60,8 +115,10 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
 
-    using var scope = app.Services.CreateScope();
+using (var scope = app.Services.CreateScope())
+{
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     try
     {
@@ -69,8 +126,6 @@ if (app.Environment.IsDevelopment())
     }
     catch (Exception ex)
     {
-        // Non-fatal: lets the API start (e.g. for /health smoke tests) even when
-        // the database isn't reachable yet. Seeding will retry on the next startup.
         app.Logger.LogWarning(ex, "Skipping role seeding: database not reachable.");
     }
 }

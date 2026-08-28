@@ -1,4 +1,5 @@
 using BarberBooking.Domain.Entities;
+using BarberBooking.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,9 +24,35 @@ public class BarberConfiguration : IEntityTypeConfiguration<Barber>
 
         builder.HasIndex(b => b.UserId).IsUnique();
 
+        builder.HasOne<ApplicationUser>()
+            .WithOne()
+            .HasForeignKey<Barber>(b => b.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(b => b.Availabilities)
             .WithOne(a => a.Barber)
             .HasForeignKey(a => a.BarberId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(b => b.Services)
+            .WithMany(s => s.Barbers)
+            .UsingEntity<Dictionary<string, object>>(
+                "BarberService",
+                right => right
+                    .HasOne<Service>()
+                    .WithMany()
+                    .HasForeignKey("ServiceId")
+                    .OnDelete(DeleteBehavior.Restrict),
+                left => left
+                    .HasOne<Barber>()
+                    .WithMany()
+                    .HasForeignKey("BarberId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                join =>
+                {
+                    join.ToTable("BarberServices");
+                    join.HasKey("BarberId", "ServiceId");
+                    join.HasIndex("ServiceId");
+                });
     }
 }
