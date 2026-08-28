@@ -5,8 +5,8 @@ import { ErrorState, LoadingState } from "../../components/ui/Feedback"
 import { api } from "../../lib/api/client"
 import type { AvailabilityResponse, AvailabilitySlot, BarberService } from "../../lib/api/types"
 import { ApiError } from "../../lib/apiClient"
-import { formatPrice, localDateIso } from "../../lib/format"
-import { groupSlotsByPeriod } from "../../lib/slots"
+import { BOOKING_TIME_ZONE, formatPrice, localDateIso } from "../../lib/format"
+import { groupSlotsByPeriod, isSlotValidForDate } from "../../lib/slots"
 
 export function WalkInForm({
   barberId,
@@ -28,6 +28,20 @@ export function WalkInForm({
   const [clientPhone, setClientPhone] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  function handleDateChange(nextDate: string) {
+    setDate(nextDate)
+    setAvailability(null)
+    setSelectedSlot(null)
+    setError(null)
+  }
+
+  function handleServiceChange(nextServiceId: string) {
+    setServiceId(nextServiceId)
+    setAvailability(null)
+    setSelectedSlot(null)
+    setError(null)
+  }
 
   useEffect(() => {
     if (!serviceId) return
@@ -51,6 +65,22 @@ export function WalkInForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selectedSlot) return
+
+    const submittedDate = new FormData(event.currentTarget).get("date")
+    if (
+      typeof submittedDate !== "string" ||
+      submittedDate !== date ||
+      availability?.date !== date ||
+      !isSlotValidForDate(selectedSlot, date, availability?.timeZoneId ?? BOOKING_TIME_ZONE)
+    ) {
+      setDate(typeof submittedDate === "string" ? submittedDate : date)
+      setAvailability(null)
+      setSelectedSlot(null)
+      setError("A disponibilidade foi alterada. Escolha novamente o horário.")
+      setSlotsAttempt((n) => n + 1)
+      return
+    }
+
     setError(null)
     setIsSubmitting(true)
     try {
@@ -81,7 +111,7 @@ export function WalkInForm({
         <span className="text-sm font-medium text-ink-700">Serviço</span>
         <select
           value={serviceId}
-          onChange={(event) => setServiceId(event.target.value)}
+          onChange={(event) => handleServiceChange(event.target.value)}
           className="rounded-md border border-ink-300 bg-ink-50 px-3 py-2.5 text-ink-900 outline-none focus:border-brass-500"
         >
           {services.map((service) => (
@@ -92,7 +122,16 @@ export function WalkInForm({
         </select>
       </label>
 
-      <Field label="Data" type="date" min={today} required value={date} onChange={(event) => setDate(event.target.value)} />
+      <Field
+        label="Data"
+        name="date"
+        type="date"
+        min={today}
+        required
+        value={date}
+        onChange={(event) => handleDateChange(event.target.value)}
+        onInput={(event) => handleDateChange(event.currentTarget.value)}
+      />
 
       <div>
         <span className="text-sm font-medium text-ink-700">Horário</span>

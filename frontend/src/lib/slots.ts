@@ -1,11 +1,16 @@
 import type { AvailabilitySlot } from "./api/types"
-import { formatUtcTime } from "./format"
+import { formatUtcDateIso, formatUtcTime } from "./format"
 
 const PERIODS = [
   { label: "Manhã", from: 0, to: 12 },
   { label: "Tarde", from: 12, to: 18 },
   { label: "Noite", from: 18, to: 24 },
 ]
+
+/** Guards against submitting a slot picked before the date/service selection changed underneath it. */
+export function isSlotValidForDate(slot: AvailabilitySlot, dateIso: string, timeZoneId: string) {
+  return formatUtcDateIso(slot.startUtc, timeZoneId) === dateIso
+}
 
 export function groupSlotsByPeriod(slots: AvailabilitySlot[], timeZoneId: string) {
   return PERIODS.map((period) => ({
