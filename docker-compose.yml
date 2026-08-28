@@ -22,9 +22,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Default: Host=postgres;Port=5432;Database=barberbooking;Username=postgres;Password=barberbooking_local_dev
       Database__ApplyMigrationsOnStartup: "true"
+      DemoData__SeedOnStartup: "true"
       Jwt__SigningKey: local-development-only-signing-key-never-use-in-production
     ports:
-      - "8080:8080"
+      - "${API_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy

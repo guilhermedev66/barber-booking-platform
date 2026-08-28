@@ -74,9 +74,11 @@ npm test
 ```
 
 O Compose aguarda o PostgreSQL ficar saudável, aplica as migrations e cria as
-roles do Identity antes de disponibilizar a API. Os dados ficam persistidos no
-volume `barberbooking_postgres`. A chave JWT e a senha do banco no Compose são
-exclusivamente locais e não devem ser reutilizadas em produção.
+roles do Identity antes de disponibilizar a API. Em banco vazio, o ambiente de
+desenvolvimento também cria três serviços, dois barbeiros demonstrativos e
+disponibilidade recorrente de segunda a sexta, das 9h às 18h. Os dados ficam
+persistidos no volume `barberbooking_postgres`. A chave JWT e a senha do banco
+no Compose são exclusivamente locais e não devem ser reutilizadas em produção.
 
 Em desenvolvimento, a API aceita CORS somente dos origins locais do Vite nas
 portas `5173` (dev) e `4173` (preview), para `localhost` e `127.0.0.1`.
@@ -103,6 +105,6 @@ exclusion constraint GiST sobre `[StartUtc, EndUtc)`, ignorando cancelados.
 
 ## Status
 
-Milestone 1 do backend concluído: autenticação, catálogo, disponibilidade,
-agendamento/cancelamento, autorização por ownership/roles e proteção concorrente
-contra double booking. Frontend segue evoluindo separadamente.
+Milestone 2 concluído: backend e frontend integrados contra a API real, stack
+local reproduzível via Compose, seed demonstrativo para banco vazio, CORS local
+restrito e CI com build/testes de integração em PostgreSQL real.

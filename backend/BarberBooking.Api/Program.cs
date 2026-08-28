@@ -140,7 +140,10 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+    var seedDevelopmentData = app.Environment.IsDevelopment() &&
+                              builder.Configuration.GetValue<bool>("DemoData:SeedOnStartup");
 
     try
     {
@@ -150,6 +153,11 @@ using (var scope = app.Services.CreateScope())
         }
 
         await IdentitySeeder.SeedRolesAsync(roleManager);
+
+        if (seedDevelopmentData)
+        {
+            await DevelopmentDataSeeder.SeedAsync(dbContext, userManager);
+        }
     }
     catch (Exception ex) when (!applyMigrationsOnStartup)
     {
