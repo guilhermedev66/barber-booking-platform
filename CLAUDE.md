@@ -79,6 +79,9 @@ desenvolvimento também cria três serviços, dois barbeiros demonstrativos e
 disponibilidade recorrente de segunda a sexta, das 9h às 18h. Os dados ficam
 persistidos no volume `barberbooking_postgres`. A chave JWT e a senha do banco
 no Compose são exclusivamente locais e não devem ser reutilizadas em produção.
+Os barbeiros demo podem autenticar pela UI com `marcos.demo@barberbooking.test`
+ou `diego.demo@barberbooking.test` e a senha `DemoBarber123!`; são credenciais
+exclusivas do ambiente local de demonstração.
 
 Em desenvolvimento, a API aceita CORS somente dos origins locais do Vite nas
 portas `5173` (dev) e `4173` (preview), para `localhost` e `127.0.0.1`.
@@ -91,6 +94,8 @@ Os testes de integração do backend usam Testcontainers e exigem Docker ativo.
 - `POST /api/auth/login` — retorna JWT bearer com claims de usuário e roles.
 - `GET /api/services` — lista serviços ativos.
 - `GET /api/barbers` — lista barbeiros ativos e os serviços atendidos.
+- `GET /api/barbers/me` — retorna o perfil do barbeiro autenticado, incluindo
+  `barberId` e serviços atendidos.
 - `GET /api/barbers/{id}/availability?date=YYYY-MM-DD&serviceId={guid}` —
   retorna slots UTC livres; `date` usa o fuso configurado em `Booking:TimeZoneId`.
 - `POST /api/appointments` — cliente autenticado agenda com
@@ -112,6 +117,6 @@ exclusion constraint GiST sobre `[StartUtc, EndUtc)`, ignorando cancelados.
 
 ## Status
 
-Milestone 2 concluído: backend e frontend integrados contra a API real, stack
-local reproduzível via Compose, seed demonstrativo para banco vazio, CORS local
-restrito e CI com build/testes de integração em PostgreSQL real.
+Milestone 3 concluído: console do barbeiro com bloqueio de agenda e walk-in,
+seed demo autenticável, perfil `GET /api/barbers/me`, stack local reproduzível
+via Compose e testes de integração em PostgreSQL real.

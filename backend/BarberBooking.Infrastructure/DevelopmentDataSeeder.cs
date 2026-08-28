@@ -7,17 +7,13 @@ namespace BarberBooking.Infrastructure;
 
 public static class DevelopmentDataSeeder
 {
+    public const string DemoBarberPassword = "DemoBarber123!";
+
     public static async Task SeedAsync(
         AppDbContext dbContext,
         UserManager<ApplicationUser> userManager,
         CancellationToken cancellationToken = default)
     {
-        if (await dbContext.Services.AnyAsync(cancellationToken) ||
-            await dbContext.Barbers.AnyAsync(cancellationToken))
-        {
-            return;
-        }
-
         var marcosUser = await EnsureBarberUserAsync(
             userManager,
             "marcos.demo@barberbooking.test",
@@ -26,6 +22,12 @@ public static class DevelopmentDataSeeder
             userManager,
             "diego.demo@barberbooking.test",
             "Diego Fontes");
+
+        if (await dbContext.Services.AnyAsync(cancellationToken) ||
+            await dbContext.Barbers.AnyAsync(cancellationToken))
+        {
+            return;
+        }
 
         var services = new List<Service>
         {
@@ -126,8 +128,15 @@ public static class DevelopmentDataSeeder
             };
 
             EnsureSucceeded(
-                await userManager.CreateAsync(user),
+                await userManager.CreateAsync(user, DemoBarberPassword),
                 $"create development barber user '{email}'");
+        }
+
+        if (!await userManager.HasPasswordAsync(user))
+        {
+            EnsureSucceeded(
+                await userManager.AddPasswordAsync(user, DemoBarberPassword),
+                $"add password to development barber user '{email}'");
         }
 
         if (!await userManager.IsInRoleAsync(user, Roles.Barber))

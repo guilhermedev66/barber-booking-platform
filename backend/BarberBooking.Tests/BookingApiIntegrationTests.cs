@@ -14,6 +14,23 @@ namespace BarberBooking.Tests;
 public class BookingApiIntegrationTests(BookingApiFixture fixture)
 {
     [Fact]
+    public async Task BarberMe_ReturnsOwnProfileAndRejectsClients()
+    {
+        using var barberClient = await LoginAsync(fixture.BarberEmail, fixture.Password);
+        var profile = await barberClient.GetFromJsonAsync<BarberResponse>("/api/barbers/me");
+
+        Assert.Equal(fixture.BarberId, profile!.Id);
+        Assert.Contains(profile.Services, service => service.Id == fixture.ServiceId);
+
+        using var client = await LoginAsync(
+            "constraint-client.integration@example.test",
+            fixture.Password);
+        var forbidden = await client.GetAsync("/api/barbers/me");
+
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+    }
+
+    [Fact]
     public async Task Registration_AcceptsPasswordWithOnlyEightCharacters()
     {
         using var client = fixture.CreateClient();
