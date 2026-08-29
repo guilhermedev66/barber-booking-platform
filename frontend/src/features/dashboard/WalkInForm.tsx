@@ -26,6 +26,7 @@ export function WalkInForm({
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null)
   const [clientName, setClientName] = useState("")
   const [clientPhone, setClientPhone] = useState("")
+  const [clientNameError, setClientNameError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -65,6 +66,12 @@ export function WalkInForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selectedSlot) return
+
+    if (clientName.trim().length < 2) {
+      setClientNameError("Informe o nome do cliente (mínimo 2 caracteres).")
+      return
+    }
+    setClientNameError(null)
 
     const submittedDate = new FormData(event.currentTarget).get("date")
     if (
@@ -176,8 +183,12 @@ export function WalkInForm({
         label="Nome do cliente"
         required
         minLength={2}
+        error={clientNameError ?? undefined}
         value={clientName}
-        onChange={(event) => setClientName(event.target.value)}
+        onChange={(event) => {
+          setClientName(event.target.value)
+          if (clientNameError) setClientNameError(null)
+        }}
         placeholder="Nome de quem chegou"
       />
       <Field

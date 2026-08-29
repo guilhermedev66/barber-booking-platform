@@ -402,8 +402,8 @@ public sealed record CreateWalkInAppointmentRequest(
     [Required] Guid BarberId,
     [Required] Guid ServiceId,
     [Required] DateTimeOffset StartUtc,
-    [Required, MinLength(2)] string ClientName,
-    string? ClientPhone);
+    [Required, MinLength(2), MaxLength(200)] string ClientName,
+    [MaxLength(30)] string? ClientPhone);
 
 public sealed record AppointmentResponse(
     Guid Id,

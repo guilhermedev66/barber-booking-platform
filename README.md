@@ -61,9 +61,11 @@ sobreponham para o mesmo barbeiro, mesmo sob concorrência real.
 
 **Duas camadas de proteção:**
 
-1. **Precheck em memória** (`AppointmentConflictChecker`): consulta os
+1. **Precheck de aplicação** (`AppointmentConflictChecker`): consulta os
    agendamentos existentes do barbeiro no período e rejeita cedo se houver
-   conflito óbvio — evita ida desnecessária ao banco na maioria dos casos.
+   conflito óbvio — evita uma tentativa de `INSERT` fadada a falhar na
+   maioria dos casos, mas por si só não é suficiente sob concorrência real
+   (race entre a consulta e o insert).
 2. **Exclusion constraint no PostgreSQL** (fonte da verdade): a extensão
    `btree_gist` habilita uma constraint que impede, a nível de banco, dois
    registros com o mesmo `BarberId` cujos intervalos `tstzrange(StartUtc,
@@ -86,9 +88,10 @@ sobreponham para o mesmo barbeiro, mesmo sob concorrência real.
    concorrentes contra um PostgreSQL real (via Testcontainers) e exigem
    exatamente um `201` e um `409`.
 
-   O mesmo caminho de código protege tanto o agendamento normal do cliente
-   quanto o "encaixe" (walk-in) criado pelo barbeiro — não existe atalho que
-   contorne a trava.
+   O agendamento normal do cliente e o "encaixe" (walk-in) criado pelo
+   barbeiro passam por controllers distintos, mas ambos escrevem na mesma
+   tabela `Appointments` e caem sob a mesma exclusion constraint — não existe
+   atalho de escrita que contorne a trava.
 
 ## Segurança e autorização
 
@@ -96,8 +99,12 @@ sobreponham para o mesmo barbeiro, mesmo sob concorrência real.
   (`Client` / `Barber` / `Admin`).
 - **Autorização por ownership:** cliente só vê/cancela os próprios
   agendamentos; barbeiro só vê/gerencia a própria agenda; admin vê tudo.
-- **Anti-IDOR:** acesso fora do escopo retorna `404` (não `403`), para não
-  revelar a existência do recurso a quem não tem permissão sobre ele.
+- **Anti-IDOR:** cancelamento de agendamento fora do escopo do usuário
+  retorna `404` (não `403`), para não revelar a existência do recurso a quem
+  não tem permissão sobre ele. Endpoints de gestão de agenda (bloqueio,
+  walk-in) retornam `403` para barbeiro fora do próprio `barberId` — esse id
+  já é público via `GET /api/barbers`, então não há exposição de existência
+  ali.
 - **Sem segredo versionado:** JWT signing key, connection string e demais
   segredos vivem em variáveis de ambiente por ambiente (nunca no `appsettings`
   commitado). CORS restrito por allow-list configurável.
@@ -159,6 +166,11 @@ Configure `frontend/.env` com `VITE_API_URL=http://localhost:8080` (veja
 
 - Plano gratuito do Render "dorme" a API após inatividade (cold start de até
   ~50s na primeira requisição).
+- As credenciais demo de barbeiro concedem autoridade real sobre a agenda
+  daquele barbeiro (bloqueio de horários, cancelamento de agendamentos).
+  Não há endpoint para desfazer um bloqueio nem reset automático dos dados
+  demo — em caso de uso indevido do ambiente público, a limpeza é manual no
+  banco.
 - Sem gestão administrativa de serviços/barbeiros via UI — só via seed.
 - Calendário do barbeiro limitado a seleção de data via input nativo (sem
   grid de mês customizado).

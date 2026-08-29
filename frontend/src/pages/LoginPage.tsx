@@ -1,9 +1,10 @@
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "../components/ui/Button"
 import { Field } from "../components/ui/Field"
 import { useAuth } from "../lib/auth/AuthContext"
 import { STAFF_ROLES } from "../lib/auth/roles"
+import { ApiError } from "../lib/apiClient"
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -12,6 +13,16 @@ export function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSlow, setIsSlow] = useState(false)
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      setIsSlow(false)
+      return
+    }
+    const timer = setTimeout(() => setIsSlow(true), 6000)
+    return () => clearTimeout(timer)
+  }, [isSubmitting])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -20,8 +31,12 @@ export function LoginPage() {
     try {
       const authUser = await login({ email, password })
       navigate(authUser.roles.some((role) => STAFF_ROLES.includes(role)) ? "/dashboard" : "/book")
-    } catch {
-      setError("Email ou senha inválidos.")
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
+        setError("Email ou senha inválidos.")
+      } else {
+        setError("Não foi possível entrar agora. Verifique sua conexão e tente novamente.")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -56,6 +71,11 @@ export function LoginPage() {
         {error && (
           <p role="alert" className="text-sm font-medium text-error-600">
             {error}
+          </p>
+        )}
+        {isSlow && (
+          <p className="text-xs text-ink-500">
+            Isso está demorando mais que o normal — o servidor pode estar iniciando após um período sem uso.
           </p>
         )}
 

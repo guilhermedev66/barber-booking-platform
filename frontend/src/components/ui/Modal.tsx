@@ -16,15 +16,41 @@ export function Modal({
   useEffect(() => {
     if (!open) return
 
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const focusableSelector =
+      "input:not(:disabled), select:not(:disabled), button:not(:disabled), textarea:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])"
+
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose()
+      if (event.key === "Escape") {
+        onClose()
+        return
+      }
+      if (event.key !== "Tab") return
+
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(focusableSelector)
+      if (!focusable || focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     document.addEventListener("keydown", handleKey)
-    const focusable = panelRef.current?.querySelector<HTMLElement>("input, select, button, textarea")
+    const focusable = panelRef.current?.querySelector<HTMLElement>(focusableSelector)
     focusable?.focus()
 
-    return () => document.removeEventListener("keydown", handleKey)
+    return () => {
+      document.removeEventListener("keydown", handleKey)
+      previouslyFocused?.focus()
+    }
   }, [open, onClose])
 
   if (!open) return null

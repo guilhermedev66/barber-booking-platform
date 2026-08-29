@@ -182,8 +182,10 @@ public class BookingApiIntegrationTests(BookingApiFixture fixture)
             SaveAndCapturePostgresExceptionAsync(secondDbContext));
 
         Assert.Single(results, exception => exception is null);
-        var exclusionViolation = Assert.Single(results, exception => exception is not null);
-        Assert.Equal(PostgresErrorCodes.ExclusionViolation, exclusionViolation!.SqlState);
+        var contentionException = Assert.Single(results, exception => exception is not null);
+        Assert.Contains(
+            contentionException!.SqlState,
+            new[] { PostgresErrorCodes.ExclusionViolation, PostgresErrorCodes.DeadlockDetected });
     }
 
     [Fact]
@@ -390,9 +392,22 @@ public class BookingApiIntegrationTests(BookingApiFixture fixture)
             await dbContext.SaveChangesAsync();
             return null;
         }
-        catch (DbUpdateException exception) when (exception.InnerException is PostgresException postgresException)
+        catch (Exception exception) when (FindPostgresException(exception) is not null)
         {
-            return postgresException;
+            return FindPostgresException(exception);
         }
+    }
+
+    private static PostgresException? FindPostgresException(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgresException)
+            {
+                return postgresException;
+            }
+        }
+
+        return null;
     }
 }

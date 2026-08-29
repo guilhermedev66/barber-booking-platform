@@ -1,8 +1,9 @@
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { Button } from "../components/ui/Button"
 import { Field } from "../components/ui/Field"
 import { useAuth } from "../lib/auth/AuthContext"
+import { ApiError } from "../lib/apiClient"
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -12,6 +13,16 @@ export function RegisterPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSlow, setIsSlow] = useState(false)
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      setIsSlow(false)
+      return
+    }
+    const timer = setTimeout(() => setIsSlow(true), 6000)
+    return () => clearTimeout(timer)
+  }, [isSubmitting])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -26,8 +37,8 @@ export function RegisterPage() {
     try {
       await register({ fullName: name, email, password })
       navigate("/book")
-    } catch {
-      setError("Não foi possível criar sua conta. Tente novamente.")
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Não foi possível criar sua conta. Tente novamente.")
     } finally {
       setIsSubmitting(false)
     }
@@ -73,6 +84,11 @@ export function RegisterPage() {
         {error && (
           <p role="alert" className="text-sm font-medium text-error-600">
             {error}
+          </p>
+        )}
+        {isSlow && (
+          <p className="text-xs text-ink-500">
+            Isso está demorando mais que o normal — o servidor pode estar iniciando após um período sem uso.
           </p>
         )}
 
