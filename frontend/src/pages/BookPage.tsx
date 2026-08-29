@@ -170,7 +170,7 @@ export function BookPage() {
     if (!confirmedAppointment) return
     const content = buildIcsContent({
       uid: `${confirmedAppointment.id}@barberbooking`,
-      summary: `${confirmedAppointment.serviceName} — Barber Booking`,
+      summary: `${confirmedAppointment.serviceName} — Ofício Barbearia`,
       description: `Com ${confirmedAppointment.barberName}`,
       startUtc: confirmedAppointment.startUtc,
       endUtc: confirmedAppointment.endUtc,
@@ -191,15 +191,15 @@ export function BookPage() {
   if (confirmedAppointment) {
     return (
       <section className="mx-auto max-w-md py-10 text-center">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Tudo certo</span>
-        <h1 className="mt-3 font-heading text-3xl font-semibold text-ink-950">Agendamento confirmado</h1>
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600 dark:text-brass-400">Tudo certo</span>
+        <h1 className="mt-3 font-heading text-3xl font-semibold text-ink-950 dark:text-ink-50">Agendamento confirmado</h1>
 
         <div className="mt-6 text-left">
           <TicketFrame>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Comanda</p>
-                <p className="mt-1 font-heading text-xl font-semibold text-ink-950">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600 dark:text-brass-400">Comanda</p>
+                <p className="mt-1 font-heading text-xl font-semibold text-ink-950 dark:text-ink-50">
                   {confirmedAppointment.serviceName}
                 </p>
               </div>
@@ -230,8 +230,8 @@ export function BookPage() {
 
   return (
     <section className={step === 3 ? "pb-28 sm:pb-8" : "pb-8"}>
-      <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl">Agendar horário</h1>
-      <p className="mt-1 text-sm text-ink-500">Escolha o serviço, o barbeiro e o melhor horário para você.</p>
+      <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl dark:text-ink-50">Agendar horário</h1>
+      <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Escolha o serviço, o barbeiro e o melhor horário para você.</p>
 
       <div className="mt-8">
         <Stepper current={step} />
@@ -243,7 +243,7 @@ export function BookPage() {
         {!catalogError && !services && <LoadingState label="Carregando serviços…" />}
 
         {!catalogError && services && barbers && step === 0 && (
-          <ul className="divide-y divide-ink-200 rounded-lg border border-ink-200 bg-white/60">
+          <ul className="divide-y divide-ink-200 rounded-lg border border-ink-200 bg-white/60 dark:divide-ink-800 dark:border-ink-800 dark:bg-ink-900/60">
             {services.map((service) => (
               <li key={service.id}>
                 <button
@@ -254,16 +254,18 @@ export function BookPage() {
                   }}
                   className={[
                     "flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-colors sm:px-5",
-                    selectedService?.id === service.id ? "bg-brass-200/30" : "hover:bg-ink-100",
+                    selectedService?.id === service.id
+                      ? "bg-brass-200/30 dark:bg-brass-500/10"
+                      : "hover:bg-ink-100 dark:hover:bg-ink-800",
                   ].join(" ")}
                 >
                   <div className="min-w-0">
-                    <p className="font-heading text-lg font-semibold text-ink-900">{service.name}</p>
-                    <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-ink-500 tabular-nums">
+                    <p className="font-heading text-lg font-semibold text-ink-900 dark:text-ink-100">{service.name}</p>
+                    <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-ink-500 tabular-nums dark:text-ink-400">
                       {formatDuration(service.durationMinutes)}
                     </p>
                   </div>
-                  <span className="shrink-0 font-heading text-lg font-semibold text-brass-700 tabular-nums">
+                  <span className="shrink-0 font-heading text-lg font-semibold text-brass-700 tabular-nums dark:text-brass-400">
                     {formatPrice(service.price)}
                   </span>
                 </button>
@@ -278,15 +280,15 @@ export function BookPage() {
               type="button"
               onClick={handleFirstAvailable}
               disabled={isSelectingFirstBarber}
-              className="mb-3 flex w-full items-center justify-between rounded-lg border border-dashed border-brass-500 bg-brass-200/20 px-4 py-3.5 text-left transition-colors hover:bg-brass-200/40"
+              className="mb-3 flex w-full items-center justify-between rounded-lg border border-dashed border-brass-500 bg-brass-200/20 px-4 py-3.5 text-left transition-colors hover:bg-brass-200/40 dark:border-brass-500/60 dark:bg-brass-500/10 dark:hover:bg-brass-500/20"
             >
               <span>
-                <span className="block font-heading text-base font-semibold text-ink-900">
+                <span className="block font-heading text-base font-semibold text-ink-900 dark:text-ink-100">
                   {isSelectingFirstBarber ? "Procurando primeiro horário livre…" : "Primeiro barbeiro disponível"}
                 </span>
-                <span className="text-sm text-ink-500">Mais rápido — vemos quem tem o próximo horário livre.</span>
+                <span className="text-sm text-ink-500 dark:text-ink-400">Mais rápido — vemos quem tem o próximo horário livre.</span>
               </span>
-              <span className="shrink-0 text-sm font-semibold text-brass-700">Escolher</span>
+              <span className="shrink-0 text-sm font-semibold text-brass-700 dark:text-brass-400">Escolher</span>
             </button>
 
             <div className="grid gap-3 sm:grid-cols-3">
@@ -301,23 +303,23 @@ export function BookPage() {
                   className={[
                     "flex flex-col items-start gap-2 rounded-lg border p-4 text-left transition-colors",
                     selectedBarber?.id === barber.id
-                      ? "border-brass-500 bg-brass-200/40"
-                      : "border-ink-200 bg-white/60 hover:border-ink-400",
+                      ? "border-brass-500 bg-brass-200/40 dark:bg-brass-500/10"
+                      : "border-ink-200 bg-white/60 hover:border-ink-400 dark:border-ink-800 dark:bg-ink-900/60 dark:hover:border-ink-600",
                   ].join(" ")}
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ink-950 font-heading text-sm font-semibold text-brass-300">
                     {barber.displayName.split(" ").map((name) => name[0]).join("").slice(0, 2)}
                   </span>
-                  <span className="font-heading text-base font-semibold text-ink-900">{barber.displayName}</span>
-                  <span className="text-xs font-medium uppercase tracking-wide text-brass-600">Barbeiro</span>
-                  <span className="text-sm text-ink-500">{barber.bio}</span>
+                  <span className="font-heading text-base font-semibold text-ink-900 dark:text-ink-100">{barber.displayName}</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-brass-600 dark:text-brass-400">Barbeiro</span>
+                  <span className="text-sm text-ink-500 dark:text-ink-400">{barber.bio}</span>
                 </button>
               ))}
             </div>
             <button
               type="button"
               onClick={() => setStep(0)}
-              className="mt-6 text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-ink-900"
+              className="mt-6 text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-ink-400 dark:hover:text-ink-100"
             >
               Voltar para serviços
             </button>
@@ -327,7 +329,7 @@ export function BookPage() {
         {!catalogError && services && barbers && step === 2 && selectedBarber && (
           <div>
             {conflictNotice && (
-              <p role="alert" className="mb-4 rounded-md border border-error-100 bg-error-100/40 px-3 py-2.5 text-sm font-medium text-error-600">
+              <p role="alert" className="mb-4 rounded-md border border-error-100 bg-error-100/40 px-3 py-2.5 text-sm font-medium text-error-600 dark:border-error-600/30 dark:bg-error-600/10 dark:text-error-400">
                 {conflictNotice}
               </p>
             )}
@@ -341,8 +343,8 @@ export function BookPage() {
                     className={[
                       "shrink-0 rounded-md border px-3.5 py-2.5 text-sm font-medium capitalize transition-colors",
                       selectedDate === date
-                        ? "border-ink-950 bg-ink-950 text-brass-300"
-                        : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400",
+                        ? "border-ink-950 bg-ink-950 text-brass-300 dark:border-brass-500 dark:bg-brass-500 dark:text-ink-950"
+                        : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400 dark:border-ink-800 dark:bg-ink-900/60 dark:text-ink-300 dark:hover:border-ink-600",
                     ].join(" ")}
                   >
                     {formatDateLabel(date)}
@@ -358,7 +360,7 @@ export function BookPage() {
                   onChange={(event) => {
                     if (event.target.value) setSelectedDate(event.target.value)
                   }}
-                  className="rounded-md border border-ink-200 bg-white/60 px-3 py-2.5 text-sm font-medium text-ink-700 outline-none transition-colors focus:border-brass-500"
+                  className="rounded-md border border-ink-200 bg-white/60 px-3 py-2.5 text-sm font-medium text-ink-700 outline-none transition-colors focus:border-brass-500 dark:border-ink-800 dark:bg-ink-900/60 dark:text-ink-300 dark:focus:border-brass-400"
                 />
               </label>
             </div>
@@ -367,16 +369,16 @@ export function BookPage() {
               {slotsError && <ErrorState onRetry={() => setSlotsAttempt((n) => n + 1)} />}
               {!slotsError && !availability && <LoadingState label="Buscando horários disponíveis…" />}
               {!slotsError && availability && availability.slots.length === 0 && (
-                <div className="rounded-lg border border-dashed border-ink-300 py-10 text-center">
-                  <p className="font-heading text-lg font-semibold text-ink-800">Sem horários neste dia</p>
-                  <p className="mt-1 text-sm text-ink-500">Escolha outra data para ver a agenda de {selectedBarber.displayName}.</p>
+                <div className="rounded-lg border border-dashed border-ink-300 py-10 text-center dark:border-ink-700">
+                  <p className="font-heading text-lg font-semibold text-ink-800 dark:text-ink-200">Sem horários neste dia</p>
+                  <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Escolha outra data para ver a agenda de {selectedBarber.displayName}.</p>
                 </div>
               )}
               {!slotsError && availability && availability.slots.length > 0 && (
                 <div className="flex flex-col gap-6">
                   {groupSlotsByPeriod(availability.slots, availability.timeZoneId).map((group) => (
                     <div key={group.label}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{group.label}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">{group.label}</p>
                       <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
                         {group.slots.map(({ slot, time }) => (
                           <button
@@ -389,8 +391,8 @@ export function BookPage() {
                             className={[
                               "rounded-md border px-3 py-2.5 text-sm font-medium tabular-nums transition-colors",
                               selectedSlot?.startUtc === slot.startUtc
-                                ? "border-brass-500 bg-brass-200/40 text-ink-900"
-                                : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400",
+                                ? "border-brass-500 bg-brass-200/40 text-ink-900 dark:bg-brass-500/10 dark:text-ink-100"
+                                : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400 dark:border-ink-800 dark:bg-ink-900/60 dark:text-ink-300 dark:hover:border-ink-600",
                             ].join(" ")}
                           >
                             {time}
@@ -406,7 +408,7 @@ export function BookPage() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="mt-6 text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-ink-900"
+              className="mt-6 text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-ink-900 dark:text-ink-400 dark:hover:text-ink-100"
             >
               Voltar para barbeiros
             </button>
@@ -416,8 +418,8 @@ export function BookPage() {
         {!catalogError && services && barbers && step === 3 && selectedService && selectedBarber && selectedSlot && (
           <div className="mx-auto max-w-md">
             <TicketFrame>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Resumo</p>
-              <p className="mt-1 font-heading text-xl font-semibold text-ink-950">{selectedService.name}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600 dark:text-brass-400">Resumo</p>
+              <p className="mt-1 font-heading text-xl font-semibold text-ink-950 dark:text-ink-50">{selectedService.name}</p>
               <dl className="mt-5 flex flex-col gap-3">
                 <ReceiptRow label="Barbeiro" value={selectedBarber.displayName} />
                 <ReceiptRow label="Data" value={formatDateLabel(selectedDate)} />
@@ -431,7 +433,7 @@ export function BookPage() {
             </TicketFrame>
 
             {confirmError && (
-              <p role="alert" className="mt-4 text-sm font-medium text-error-600">
+              <p role="alert" className="mt-4 text-sm font-medium text-error-600 dark:text-error-400">
                 {confirmError}
               </p>
             )}
@@ -445,7 +447,7 @@ export function BookPage() {
               </Button>
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-ink-200 bg-ink-50 px-4 py-3 sm:hidden">
+            <div className="fixed inset-x-0 bottom-0 z-40 flex gap-3 border-t border-ink-200 bg-ink-50 px-4 py-3 sm:hidden dark:border-ink-800 dark:bg-ink-950">
               <Button
                 variant="secondary"
                 onClick={() => setStep(2)}

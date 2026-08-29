@@ -23,13 +23,13 @@ export function LoadingState({ label = "Carregando…" }: { label?: string }) {
   }, [])
 
   return (
-    <div role="status" className="flex flex-col items-center justify-center gap-3 py-12 text-center text-ink-500">
+    <div role="status" className="flex flex-col items-center justify-center gap-3 py-12 text-center text-ink-500 dark:text-ink-400">
       <div className="flex items-center gap-3">
         <Spinner />
         <span className="text-sm">{label}</span>
       </div>
       {isSlow && (
-        <p className="max-w-xs text-xs text-ink-500">
+        <p className="max-w-xs text-xs text-ink-500 dark:text-ink-400">
           Isso está demorando mais que o normal — o servidor pode estar iniciando após um período sem uso.
         </p>
       )}
@@ -45,13 +45,13 @@ export function ErrorState({
   onRetry?: () => void
 }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-error-100 bg-error-100/40 py-10 text-center">
-      <p className="text-sm font-medium text-error-600">{message}</p>
+    <div role="alert" className="flex flex-col items-center gap-3 rounded-lg border border-error-100 bg-error-100/40 py-10 text-center dark:border-error-600/30 dark:bg-error-600/10">
+      <p className="text-sm font-medium text-error-600 dark:text-error-400">{message}</p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="text-sm font-semibold text-ink-800 underline underline-offset-4 hover:text-ink-900"
+          className="text-sm font-semibold text-ink-800 underline underline-offset-4 hover:text-ink-900 dark:text-ink-200 dark:hover:text-ink-50"
         >
           Tentar novamente
         </button>
@@ -70,9 +70,9 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-ink-300 py-12 text-center">
-      <p className="font-heading text-lg font-semibold text-ink-800">{title}</p>
-      {description && <p className="max-w-sm text-sm text-ink-500">{description}</p>}
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-ink-300 py-12 text-center dark:border-ink-700">
+      <p className="font-heading text-lg font-semibold text-ink-800 dark:text-ink-200">{title}</p>
+      {description && <p className="max-w-sm text-sm text-ink-500 dark:text-ink-400">{description}</p>}
       {action}
     </div>
   )

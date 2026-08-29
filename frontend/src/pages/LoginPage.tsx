@@ -44,9 +44,9 @@ export function LoginPage() {
 
   return (
     <section className="mx-auto max-w-sm py-6">
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Bem-vindo de volta</span>
-      <h1 className="mt-3 font-heading text-3xl font-semibold text-ink-950">Entrar</h1>
-      <p className="mt-1 text-sm text-ink-500">Acesse sua conta para gerenciar seus agendamentos.</p>
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600 dark:text-brass-400">Bem-vindo de volta</span>
+      <h1 className="mt-3 font-heading text-3xl font-semibold text-ink-950 dark:text-ink-50">Entrar</h1>
+      <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Acesse sua conta para gerenciar seus agendamentos.</p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-4">
         <Field
@@ -69,12 +69,12 @@ export function LoginPage() {
         />
 
         {error && (
-          <p role="alert" className="text-sm font-medium text-error-600">
+          <p role="alert" className="text-sm font-medium text-error-600 dark:text-error-400">
             {error}
           </p>
         )}
         {isSlow && (
-          <p className="text-xs text-ink-500">
+          <p className="text-xs text-ink-500 dark:text-ink-400">
             Isso está demorando mais que o normal — o servidor pode estar iniciando após um período sem uso.
           </p>
         )}
@@ -84,9 +84,9 @@ export function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-ink-500">
+      <p className="mt-6 text-center text-sm text-ink-500 dark:text-ink-400">
         Ainda não tem conta?{" "}
-        <Link to="/register" className="font-semibold text-ink-800 underline underline-offset-4 hover:text-brass-600">
+        <Link to="/register" className="font-semibold text-ink-800 underline underline-offset-4 hover:text-brass-600 dark:text-ink-200 dark:hover:text-brass-400">
           Cadastre-se
         </Link>
       </p>

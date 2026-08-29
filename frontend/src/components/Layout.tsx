@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from "react-router"
 import { useAuth } from "../lib/auth/AuthContext"
 import { STAFF_ROLES } from "../lib/auth/roles"
+import { ThemeToggle } from "./ui/ThemeToggle"
+import { Wordmark } from "./ui/Wordmark"
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return [
@@ -30,13 +32,13 @@ export function Layout() {
       >
         Pular para o conteúdo
       </a>
-      <header className="bg-ink-950">
+      <header className="bg-ink-950 dark:border-b dark:border-ink-800">
         <nav
           className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3"
           aria-label="Principal"
         >
-          <NavLink to="/" className="font-heading text-lg font-semibold tracking-wide text-brass-400">
-            Barber Booking
+          <NavLink to="/" aria-label="Ofício Barbearia — início">
+            <Wordmark />
           </NavLink>
           <ul className="flex flex-wrap items-center justify-end gap-1">
             {navLinks.map((link) => (
@@ -61,14 +63,34 @@ export function Layout() {
                 </NavLink>
               )}
             </li>
+            <li>
+              <ThemeToggle />
+            </li>
           </ul>
         </nav>
       </header>
       <main id="main-content" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         <Outlet />
       </main>
-      <footer className="border-t border-ink-200 py-4 text-center text-sm text-ink-500">
-        Barber Booking Platform
+      <footer className="border-t border-ink-200 dark:border-ink-800">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <span className="font-heading text-sm font-semibold tracking-wide text-ink-800 dark:text-ink-200">
+              Ofício Barbearia
+            </span>
+            <p className="mt-0.5 text-xs text-ink-500 dark:text-ink-400">
+              Projeto demonstrativo — Barber Booking Platform
+            </p>
+          </div>
+          <a
+            href="https://github.com/guilhermedev66/barber-booking-platform"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-medium text-ink-500 underline underline-offset-4 transition-colors hover:text-brass-600 dark:text-ink-400 dark:hover:text-brass-400"
+          >
+            Ver código no GitHub
+          </a>
+        </div>
       </footer>
     </div>
   )

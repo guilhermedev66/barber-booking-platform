@@ -39,8 +39,8 @@ export function MyAppointmentsPage() {
 
   return (
     <section className="pb-8">
-      <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl">Minhas reservas</h1>
-      <p className="mt-1 text-sm text-ink-500">Seus agendamentos e histórico.</p>
+      <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl dark:text-ink-50">Minhas reservas</h1>
+      <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Seus agendamentos e histórico.</p>
 
       {error && <ErrorState onRetry={() => setAttempt((n) => n + 1)} />}
 
@@ -62,7 +62,7 @@ export function MyAppointmentsPage() {
 
           {history.length > 0 && (
             <div className="mt-10">
-              <h2 className="font-heading text-lg font-semibold text-ink-900">Histórico</h2>
+              <h2 className="font-heading text-lg font-semibold text-ink-900 dark:text-ink-100">Histórico</h2>
               <ol className="mt-3 flex flex-col gap-2">
                 {history.map((appointment) => (
                   <AppointmentRow key={appointment.id} appointment={appointment} />
@@ -106,7 +106,7 @@ function AppointmentRow({
   }
 
   return (
-    <li className="rounded-lg border border-ink-200 bg-white/60 px-4 py-3">
+    <li className="rounded-lg border border-ink-200 bg-white/60 px-4 py-3 dark:border-ink-800 dark:bg-ink-900/60">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-4">
           <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-md bg-ink-950 py-1.5 text-brass-300">
@@ -115,8 +115,8 @@ function AppointmentRow({
             </span>
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-ink-900">{appointment.serviceName}</p>
-            <p className="text-sm text-ink-500">
+            <p className="font-medium text-ink-900 dark:text-ink-100">{appointment.serviceName}</p>
+            <p className="text-sm text-ink-500 dark:text-ink-400">
               com {appointment.barberName} · {formatDateLong(formatUtcDateIso(appointment.startUtc))} ·{" "}
               <span className="tabular-nums">{formatPrice(appointment.price)}</span>
             </p>
@@ -132,7 +132,7 @@ function AppointmentRow({
                     type="button"
                     onClick={handleConfirmCancel}
                     disabled={isCancelling}
-                    className="text-sm font-semibold text-error-600 underline underline-offset-4 hover:text-error-600/80"
+                    className="text-sm font-semibold text-error-600 underline underline-offset-4 hover:text-error-600/80 dark:text-error-400"
                   >
                     {isCancelling ? "Cancelando…" : "Confirmar"}
                   </button>
@@ -140,7 +140,7 @@ function AppointmentRow({
                     type="button"
                     onClick={() => setConfirming(false)}
                     disabled={isCancelling}
-                    className="text-sm text-ink-500 underline underline-offset-4 hover:text-ink-800"
+                    className="text-sm text-ink-500 underline underline-offset-4 hover:text-ink-800 dark:text-ink-400 dark:hover:text-ink-100"
                   >
                     Manter
                   </button>
@@ -149,7 +149,7 @@ function AppointmentRow({
                 <button
                   type="button"
                   onClick={() => setConfirming(true)}
-                  className="text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-error-600"
+                  className="text-sm font-medium text-ink-600 underline underline-offset-4 hover:text-error-600 dark:text-ink-400 dark:hover:text-error-400"
                 >
                   Cancelar
                 </button>
@@ -158,7 +158,7 @@ function AppointmentRow({
           )}
         </div>
       </div>
-      {cancelError && <p className="mt-2 text-xs font-medium text-error-600">{cancelError}</p>}
+      {cancelError && <p className="mt-2 text-xs font-medium text-error-600 dark:text-error-400">{cancelError}</p>}
     </li>
   )
 }

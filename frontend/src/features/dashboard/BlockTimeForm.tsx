@@ -44,12 +44,12 @@ export function BlockTimeForm({ barberId, onSuccess }: { barberId: string; onSuc
         onChange={(event) => setDate(event.target.value)}
       />
 
-      <label className="flex items-center gap-2 text-sm text-ink-700">
+      <label className="flex items-center gap-2 text-sm text-ink-700 dark:text-ink-300">
         <input
           type="checkbox"
           checked={isDayOff}
           onChange={(event) => setIsDayOff(event.target.checked)}
-          className="h-4 w-4 rounded border-ink-300 text-brass-600 focus:ring-brass-500"
+          className="h-4 w-4 rounded border-ink-300 text-brass-600 focus:ring-brass-500 dark:border-ink-700 dark:bg-ink-900"
         />
         Bloquear o dia inteiro
       </label>
@@ -74,7 +74,7 @@ export function BlockTimeForm({ barberId, onSuccess }: { barberId: string; onSuc
       )}
 
       {error && (
-        <p role="alert" className="text-sm font-medium text-error-600">
+        <p role="alert" className="text-sm font-medium text-error-600 dark:text-error-400">
           {error}
         </p>
       )}

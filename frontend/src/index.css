@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
   --font-sans: "Archivo Variable", system-ui, "Segoe UI", sans-serif;
   --font-heading: "Fraunces Variable", Georgia, "Times New Roman", serif;
@@ -26,6 +28,8 @@
   --color-brass-200: #f4e4c4;
 
   --color-error-600: #a3402f;
+  --color-error-500: #c65943;
+  --color-error-400: #e0836b;
   --color-error-100: #f6e3de;
 
   --radius-sm: 0.25rem;
@@ -34,11 +38,26 @@
   --radius-xl: 1.25rem;
 }
 
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-ink-50);
   color: var(--color-ink-900);
   font-feature-settings: "ss01" 1;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--color-ink-950);
+  color: var(--color-ink-100);
+  --ticket-dot-color: var(--color-ink-600);
 }
 
 h1,
@@ -51,4 +70,19 @@ h3 {
 :focus-visible {
   outline: 2px solid var(--color-brass-500);
   outline-offset: 2px;
+}
+
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--color-brass-400);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

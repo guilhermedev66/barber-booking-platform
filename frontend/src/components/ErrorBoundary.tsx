@@ -25,16 +25,16 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ink-50 px-4 text-center">
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600">Algo deu errado</span>
-        <h1 className="font-heading text-2xl font-semibold text-ink-950">Não foi possível carregar a página</h1>
-        <p className="max-w-sm text-sm text-ink-500">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ink-50 px-4 text-center dark:bg-ink-950">
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-brass-600 dark:text-brass-400">Algo deu errado</span>
+        <h1 className="font-heading text-2xl font-semibold text-ink-950 dark:text-ink-50">Não foi possível carregar a página</h1>
+        <p className="max-w-sm text-sm text-ink-500 dark:text-ink-400">
           Tente recarregar. Se o problema continuar, tente novamente em alguns instantes.
         </p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-md bg-brass-600 px-5 py-2.5 text-sm font-medium text-ink-50 transition-colors hover:bg-brass-500"
+          className="rounded-md bg-brass-600 px-5 py-2.5 text-sm font-medium text-ink-50 transition-colors hover:bg-brass-500 dark:bg-brass-500 dark:text-ink-950 dark:hover:bg-brass-400"
         >
           Recarregar página
         </button>

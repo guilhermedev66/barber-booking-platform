@@ -115,11 +115,11 @@ export function WalkInForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-700">Serviço</span>
+        <span className="text-sm font-medium text-ink-700 dark:text-ink-300">Serviço</span>
         <select
           value={serviceId}
           onChange={(event) => handleServiceChange(event.target.value)}
-          className="rounded-md border border-ink-300 bg-ink-50 px-3 py-2.5 text-ink-900 outline-none focus:border-brass-500"
+          className="rounded-md border border-ink-300 bg-ink-50 px-3 py-2.5 text-ink-900 outline-none focus:border-brass-500 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:focus:border-brass-400"
         >
           {services.map((service) => (
             <option key={service.id} value={service.id}>
@@ -141,12 +141,12 @@ export function WalkInForm({
       />
 
       <div>
-        <span className="text-sm font-medium text-ink-700">Horário</span>
+        <span className="text-sm font-medium text-ink-700 dark:text-ink-300">Horário</span>
         <div className="mt-2">
           {slotsError && <ErrorState onRetry={() => setSlotsAttempt((n) => n + 1)} />}
           {!slotsError && !availability && <LoadingState label="Buscando horários…" />}
           {!slotsError && availability && availability.slots.length === 0 && (
-            <p className="rounded-md border border-dashed border-ink-300 px-3 py-4 text-center text-sm text-ink-500">
+            <p className="rounded-md border border-dashed border-ink-300 px-3 py-4 text-center text-sm text-ink-500 dark:border-ink-700 dark:text-ink-400">
               Sem horários livres nesse dia.
             </p>
           )}
@@ -154,7 +154,7 @@ export function WalkInForm({
             <div className="flex flex-col gap-3">
               {groupSlotsByPeriod(availability.slots, availability.timeZoneId).map((group) => (
                 <div key={group.label}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">{group.label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400">{group.label}</p>
                   <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
                     {group.slots.map(({ slot, time }) => (
                       <button
@@ -164,8 +164,8 @@ export function WalkInForm({
                         className={[
                           "rounded-md border px-2 py-2 text-sm font-medium tabular-nums transition-colors",
                           selectedSlot?.startUtc === slot.startUtc
-                            ? "border-brass-500 bg-brass-200/40 text-ink-900"
-                            : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400",
+                            ? "border-brass-500 bg-brass-200/40 text-ink-900 dark:bg-brass-500/10 dark:text-ink-100"
+                            : "border-ink-200 bg-white/60 text-ink-700 hover:border-ink-400 dark:border-ink-800 dark:bg-ink-900/60 dark:text-ink-300 dark:hover:border-ink-600",
                         ].join(" ")}
                       >
                         {time}
@@ -200,7 +200,7 @@ export function WalkInForm({
       />
 
       {error && (
-        <p role="alert" className="text-sm font-medium text-error-600">
+        <p role="alert" className="text-sm font-medium text-error-600 dark:text-error-400">
           {error}
         </p>
       )}

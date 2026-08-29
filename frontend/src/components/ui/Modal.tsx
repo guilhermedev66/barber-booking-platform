@@ -57,21 +57,21 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink-950/60" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-ink-950/60 dark:bg-black/70" onClick={onClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-ink-50 p-6 shadow-xl"
+        className="relative z-10 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-xl dark:bg-ink-900 dark:ring-1 dark:ring-ink-800"
       >
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-heading text-lg font-semibold text-ink-950">{title}</h2>
+          <h2 className="font-heading text-lg font-semibold text-ink-950 dark:text-ink-50">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900"
+            className="rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-900 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100"
           >
             ✕
           </button>

@@ -3,13 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import App from './App'
 import { AuthProvider } from './lib/auth/AuthContext'
+import { ThemeProvider } from './lib/theme/ThemeContext'
 
 function renderApp(initialEntries: string[]) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </ThemeProvider>
     </MemoryRouter>,
   )
 }
@@ -18,7 +21,7 @@ describe('App routing', () => {
   it('renders the home page and guest nav links by default', () => {
     renderApp(['/'])
 
-    expect(screen.getByRole('heading', { name: /barber booking platform/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /ofício barbearia/i })).toBeInTheDocument()
 
     const nav = screen.getByRole('navigation')
     expect(within(nav).getByRole('link', { name: /agendar/i })).toBeInTheDocument()

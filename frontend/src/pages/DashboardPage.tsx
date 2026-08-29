@@ -79,8 +79,8 @@ export function DashboardPage() {
     <section className="pb-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl">Painel</h1>
-          <p className="mt-1 text-sm text-ink-500">Agenda do dia e próximos agendamentos.</p>
+          <h1 className="font-heading text-2xl font-semibold text-ink-950 sm:text-3xl dark:text-ink-50">Painel</h1>
+          <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Agenda do dia e próximos agendamentos.</p>
         </div>
         {myBarber && (
           <div className="flex gap-2">
@@ -111,28 +111,28 @@ export function DashboardPage() {
         <>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {summary.map((item) => (
-              <div key={item.label} className="rounded-lg border border-ink-200 bg-white/60 p-4">
-                <p className="text-sm text-ink-500">{item.label}</p>
-                <p className="mt-1 font-heading text-3xl font-semibold text-ink-950 tabular-nums">{item.value}</p>
+              <div key={item.label} className="rounded-lg border border-ink-200 bg-white/60 p-4 dark:border-ink-800 dark:bg-ink-900/60">
+                <p className="text-sm text-ink-500 dark:text-ink-400">{item.label}</p>
+                <p className="mt-1 font-heading text-3xl font-semibold text-ink-950 tabular-nums dark:text-ink-50">{item.value}</p>
               </div>
             ))}
           </div>
 
           <div className="mt-10">
-            <h2 className="font-heading text-lg font-semibold text-ink-900">Hoje</h2>
+            <h2 className="font-heading text-lg font-semibold text-ink-900 dark:text-ink-100">Hoje</h2>
             {today.length === 0 ? (
               <div className="mt-3">
                 <EmptyState title="Nenhum agendamento hoje" description="A agenda de hoje está livre." />
               </div>
             ) : (
-              <div className="mt-5 rounded-lg border border-ink-200 bg-white/60 p-5">
+              <div className="mt-5 rounded-lg border border-ink-200 bg-white/60 p-5 dark:border-ink-800 dark:bg-ink-900/60">
                 <ChairTimeline appointments={today} />
               </div>
             )}
           </div>
 
           <div className="mt-10">
-            <h2 className="font-heading text-lg font-semibold text-ink-900">Próximos agendamentos</h2>
+            <h2 className="font-heading text-lg font-semibold text-ink-900 dark:text-ink-100">Próximos agendamentos</h2>
             {upcoming.length === 0 ? (
               <div className="mt-3">
                 <EmptyState title="Nada agendado nos próximos dias" />
@@ -153,14 +153,14 @@ export function DashboardPage() {
 
 function AppointmentRow({ appointment, showDate = false }: { appointment: Appointment; showDate?: boolean }) {
   return (
-    <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-200 bg-white/60 px-4 py-3">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-200 bg-white/60 px-4 py-3 dark:border-ink-800 dark:bg-ink-900/60">
       <div className="flex min-w-0 items-center gap-4">
         <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-md bg-ink-950 py-1.5 text-brass-300">
           <span className="text-sm font-semibold leading-none tabular-nums">{formatUtcTime(appointment.startUtc)}</span>
         </div>
         <div className="min-w-0">
-          <p className="font-medium text-ink-900">{appointment.serviceName}</p>
-          <p className="text-sm text-ink-500">
+          <p className="font-medium text-ink-900 dark:text-ink-100">{appointment.serviceName}</p>
+          <p className="text-sm text-ink-500 dark:text-ink-400">
             {appointment.clientName ?? "Cliente"}
             {showDate ? ` · ${formatDateLong(formatUtcDateIso(appointment.startUtc))}` : ""}
           </p>
